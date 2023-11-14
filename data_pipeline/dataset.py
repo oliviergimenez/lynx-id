@@ -16,7 +16,7 @@ class LynxDataset(Dataset):
         
         img = cv2.imread(image_id["filepath"])
         
-        return img
+        return img, image_id["lynx_id"], image_id["source"], image_id["pattern"], image_id["date"], image_id["location"], image_id["image_number"]
         
     def __len__(self):
         return len(self.dataframe)
