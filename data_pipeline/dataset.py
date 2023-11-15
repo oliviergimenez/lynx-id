@@ -17,7 +17,10 @@ class LynxDataset(Dataset):
 
         # Load the image
         img = cv2.imread(image_id["filepath"])
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        try:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        except:
+            img = None
 
         # Prepare the input dictionary with the image and other data
         input_dict = {
