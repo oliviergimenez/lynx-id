@@ -19,7 +19,10 @@ for archive in "${ARCHIVES_DIR}"/*.zip; do
     unzip -o "$archive" -d "${EXTRACTED_DIR}"
 done
 
-echo "Extraction complete."
+# echo "Extraction complete."
 
-# Note: don't forget to put the .zip file of the Croatian dataset in $ARCHIVES_DIR.
-# Once the script has been called, the Croatian images folder: `lynx_pic` will be created.
+mkdir -p "${EXTRACTED_DIR}/croatia"
+mv "${EXTRACTED_DIR}/lynx_pic" "${EXTRACTED_DIR}/croatia/"
+mv "${EXTRACTED_DIR}/list_of_lynx_photos1.xlsx" "${EXTRACTED_DIR}/croatia/"
+
+# Note: don't forget to put the .zip and .xlsx files of the Croatian dataset in ${ARCHIVES_DIR}.
