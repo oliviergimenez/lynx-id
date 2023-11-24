@@ -21,3 +21,5 @@ done
 
 echo "Extraction complete."
 
+# Note: don't forget to put the .zip file of the Croatian dataset in $ARCHIVES_DIR.
+# Once the script has been called, the Croatian images folder: `lynx_pic` will be created.
