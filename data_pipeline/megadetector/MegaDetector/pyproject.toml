@@ -1,0 +1,60 @@
+[build-system]
+requires = [
+  "setuptools>61"
+]
+
+[project]
+name = "megadetector"
+version = "5.0.6"
+description = "MegaDetector is an AI model that helps conservation folks spend less time doing boring things with camera trap images."
+readme = "README-package.md"
+# As of 2023.10.10, PyTorch isn't installable on Python 3.12
+requires-python = ">=3.9,<3.12"
+license = {file = "LICENSE"}
+keywords = ["camera traps", "conservation", "wildlife", "ai"]
+authors = [
+  {name = "Your friendly neighborhood MegaDetector team", email = "cameratraps@lila.science" }
+]
+maintainers = [
+  {name = "Your friendly neighborhood MegaDetector team", email = "cameratraps@lila.science" }
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+  "Pillow >= 9.5",
+  "tqdm >= 4.64.0",
+  "jsonpickle >= 3.0.2",
+  "humanfriendly >= 10.0",
+  "numpy >= 1.26.0",
+  "matplotlib >= 3.8.0",
+  "opencv-python >= 4.8.0",
+  "requests >= 2.31.0",
+  "pyqtree >= 1.0.0",
+  "seaborn >= 0.12.2",
+  "scikit-learn >= 1.3.1",
+  "pandas >= 2.1.1",
+  "PyYAML >= 6.0.1",
+  "ultralytics-yolov5 == 0.1.1"
+  # "torch >= 2.0.1",
+  # "torchvision >= 0.15.2",
+  # "yolov5 == 7.0.13"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/agentmorris/MegaDetector"
+"Bug Reports" = "https://github.com/agentmorris/MegaDetector/issues"
+"Source" = "https://github.com/agentmorris/MegaDetector"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+exclude = [
+  "archive*", "images*", "envs*","dist*","megadetector.egg-info*",
+  "sandbox*","test-images*","__pycache__*"
+]
+
