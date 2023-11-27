@@ -22,7 +22,7 @@ lynxDataset = LynxDataset(
     Path("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_france.csv"))
 
 # Defining a dataloader
-batch_size = 512
+batch_size = 32
 dataloader = DataLoader(lynxDataset, batch_size=batch_size, shuffle=False, num_workers=1,
                         collate_fn=collate)
 
