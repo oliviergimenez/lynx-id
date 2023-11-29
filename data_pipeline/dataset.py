@@ -7,7 +7,7 @@ from pathlib import Path
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
-ImageFile.LOAD_TRUNCATED_IMAGES = False
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class LynxDataset(Dataset):
     def __init__(self, dataset_csv: Path, loader='pil', transform=None, augmentation=None):
