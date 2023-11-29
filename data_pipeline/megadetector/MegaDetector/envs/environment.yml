@@ -1,0 +1,37 @@
+name: cameratraps
+
+channels:
+- conda-forge
+
+dependencies:
+
+# Dependencies in the MD environment
+- python=3.8
+- Pillow
+- tqdm
+- jsonpickle
+- humanfriendly
+- numpy
+- matplotlib
+- pandas
+- requests
+- scikit-learn>=0.19.1
+
+# So we can run Jupyter in this environment
+- nb_conda_kernels
+- ipykernel
+
+# I don't see evidence this is used in the repo, keeping it here for posterity
+# - scikit-image>=0.13.1
+
+# Only used for remove_exif.py
+# - joblib 
+
+# Only necessary when interacting with Azure Blob Storage
+# - azure-storage-blob
+
+# Used a zillion years ago for MegaDB work
+# - jsonschema 
+# - unidecode
+
+
