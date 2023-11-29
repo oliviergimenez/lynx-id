@@ -1,11 +1,10 @@
-from torch.utils.data import Dataset
+from pathlib import Path
+
 import cv2
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageFile
-from pathlib import Path
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
+from torch.utils.data import Dataset
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -26,7 +25,8 @@ class LynxDataset(Dataset):
         if self.loader == 'opencv':
             img = cv2.imread(image_id["filepath"])
             if img is None:
-                raise ValueError(f"Image not found or corrupted at {image_id['filepath']}")
+                raise ValueError(
+                    f"Image not found or corrupted at {image_id['filepath']}")
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         elif self.loader == 'pil':
             img = Image.open(image_id["filepath"])
