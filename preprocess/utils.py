@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 import sys
 sys.path.append("../")
@@ -24,7 +25,7 @@ def get_no_and_multiple_bbox(bbox_dict):
     return no_bbox, multiple_bbox
 
 
-def flatten_bbox(bbox_dict):
+def flatten_bbox(bbox_dict, add_image_without_bbox=True):
     flat_data = []
     for img in bbox_dict['images']:
         if 'detections' in img and img['detections']:
@@ -38,6 +39,14 @@ def flatten_bbox(bbox_dict):
                                   'height': detection['bbox'][3]})
         else:
             print(f"No bbox in {img['file']}")
+            if add_image_without_bbox:
+                flat_data.append({'file': img['file'],
+                                  'category': np.nan,
+                                  'conf': np.nan,
+                                  'x': np.nan,
+                                  'y': np.nan,
+                                  'width': np.nan,
+                                  'height': np.nan})
 
     return pd.DataFrame(flat_data)
 
