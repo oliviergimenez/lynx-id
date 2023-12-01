@@ -8,6 +8,9 @@ sys.path.append("../")
 from data_pipeline.megadetector.utils import crop_bbox
 
 
+def norm_bbox():
+    print('done')
+
 def get_no_and_multiple_bbox(bbox_dict):
     no_bbox = []
     multiple_bbox = []
@@ -31,6 +34,8 @@ def flatten_bbox(bbox_dict, add_image_without_bbox=True):
         if 'detections' in img and img['detections']:
             for detection in img['detections']:
                 flat_data.append({'file': img['file'],
+                                  'im_width': img['width'],
+                                  'im_height': img['height'],
                                   'category': detection['category'],
                                   'conf': detection['conf'],
                                   'x': detection['bbox'][0],
@@ -41,6 +46,8 @@ def flatten_bbox(bbox_dict, add_image_without_bbox=True):
             print(f"No bbox in {img['file']}")
             if add_image_without_bbox:
                 flat_data.append({'file': img['file'],
+                                  'im_width': img['width'],
+                                  'im_height': img['height'],
                                   'category': np.nan,
                                   'conf': np.nan,
                                   'x': np.nan,
@@ -49,6 +56,17 @@ def flatten_bbox(bbox_dict, add_image_without_bbox=True):
                                   'height': np.nan})
 
     return pd.DataFrame(flat_data)
+
+
+def absolute_coordinates_bbox(df_bbox):
+    # Follow the "coco" convention (x_min, y_min, width, height)
+
+    df_bbox['x'] *= df_bbox['im_width']
+    df_bbox['y'] *= df_bbox['im_height']
+    df_bbox['width'] *= df_bbox['im_width']
+    df_bbox['height'] *= df_bbox['im_height']
+
+    return df_bbox
 
 
 def separate_single_multiple_df(df_bbox):
