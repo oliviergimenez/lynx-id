@@ -1,20 +1,10 @@
 # DP-SCR_Identify-and-estimate-density-lynx-population
-Re-identify individuals and estimate population density from eurasian lynx population by Deep Learning and Spatial Capture Recapture
 
-Internship dates : february 2023 - august 2023
+## Running MegaDetector in Python code
 
-Author :  Marie Joigneau
+- Requesting computing resources via SLURM, for example with: `srun --ntasks=1 --gres=gpu:1 --ntasks-per-node=1 --nodes=1 --hint=nomultithread --qos=qos_gpu-dev --account=ads@v100 --cpus-per-task 8 --pty bash
+`
+- `source setup_env.sh`  
+- You can then use the `batch_detection` function, for example, by executing the file `test_megadetector.py`.
 
-Supervisor : Olivier Gimenez https://www.cefe.cnrs.fr/fr/recherche/bc/bbp/843-c/253-olivier-gimenez 
-
-What you have :   
-- A first part presenting all my script and my folder organization necessary to do my deep learning models and predictions with some of my lighest DL models (< 100MB for github). Note that I haven't put the lynx pictures as they belong to organizations. Also I haven't put all my deep learning model here as it is too huge for github. You can ask it by email.  
-- A second part for the Office Français de la Biodiversité (OFB) or anyone wanting to do prediction with a deep learning model. It contains user guide (in French and English) and several scripts. Same here, I haven't put my best model here as it is too huge for github. You can ask it by email.   
-
-More precise README are in each part.
-
-I haven't put the Spatial Capture Recapture R script as I have taken most of the part from a Olivier Gimenez R script.   
-
-If you have any questions don't hesitate to contact me,   
-Best,   
-Marie Joigneau
+**Note**: this does not work for notebooks.
