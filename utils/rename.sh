@@ -26,6 +26,15 @@ rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_ARCOS=629/ARCOS=629_OFB_OC
 rename_file "/0_dataset_Marie_OFB_spots/OFB_SPOTS_987/987_OFB_SPOTS_2022-03-02-NA_1.jpg" "/0_dataset_Marie_OFB_spots/OFB_SPOTS_987/987_OFB_SPOTS_2022-03-02_NA_1.jpg"
 rename_file "/0_dataset_Marie_OCS/OCS_B310/B310_OCS_NA_2012-12-19_2.jpg" "/0_dataset_Marie_OCS/OCS_B310/B310_OCS_NA_2012-12-19_NA_2.jpg"
 rename_file "/0_dataset_Marie_OCS/OCS_B310/B310_OCS_NA_2012-12-23_1.jpg" "/0_dataset_Marie_OCS/OCS_B310/B310_OCS_NA_2012-12-23_NA_1.jpg"
+rename_file "/0_dataset_Marie_OFB_spots/OFB_SPOTS_1350=B2011_57/1350=B2011-57_OFB_SPOTS_2019_05-17_Haspelschiedt_32.jpg" "/0_dataset_Marie_OFB_spots/OFB_SPOTS_1350=B2011_57/1350=B2011-57_OFB_SPOTS_2019-05-17_Haspelschiedt_32.jpg"
+rename_file "/0_dataset_Marie_OFB_spots/OFB_SPOTS_1350=B2011_57/1350=B2011-57_OFB_SPOTS_2019_05-16_Haspelschiedt_31.jpg" "/0_dataset_Marie_OFB_spots/OFB_SPOTS_1350=B2011_57/1350=B2011-57_OFB_SPOTS_2019-05-16_Haspelschiedt_31.jpg"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021_01-07_Saint-Jean-Chevelu_4.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021-01-07_Saint-Jean-Chevelu_4.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021_01-07_Saint-Jean-Chevelu_3.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021-01-07_Saint-Jean-Chevelu_3.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021_02-15_Saint-Jean-Chevelu_5.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2125/2125_OFB_OCELLES_2021-02-15_Saint-Jean-Chevelu_5.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022_02-06_Mancenans-Lizerne_2.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022-02-06_Mancenans-Lizerne_2.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022_02-06_Mancenans-Lizerne_4.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022-02-06_Mancenans-Lizerne_4.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022_02-06_Mancenans-Lizerne_1.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022-02-06_Mancenans-Lizerne_1.JPG"
+rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022_02-06_Mancenans-Lizerne_3.JPG" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_2542/2542_OFB_OCELLES_2022-02-06_Mancenans-Lizerne_3.JPG"
 
 # Images that are too complicated to rename, a `broken` prefix is added so that they are not used in the dataset.
 rename_file "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_F39-095=1556/1556_FD_2021-07-04-21_100_1-FDC39-Mont-sur-Monnet (2).jpg" "/0_dataset_Marie_OFB_ocelles/OFB_OCELLES_F39-095=1556/broken_1556_FD_2021-07-04-21_100_1-FDC39-Mont-sur-Monnet (2).jpg"
