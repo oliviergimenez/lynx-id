@@ -77,19 +77,22 @@ def separate_single_multiple_df(df_bbox):
     df_bbox_multiple_detections = df_bbox[
         df_bbox['file'].isin(bbox_counts[bbox_counts > 1].index)]
 
+    df_bbox_single_detection.reset_index(drop=True, inplace=True)
+    df_bbox_multiple_detections.reset_index(drop=True, inplace=True)
+
     return df_bbox_single_detection, df_bbox_multiple_detections
 
 
 def plot_images_conf(df_bbox, by='largest'):
     if by == 'largest':
-        by_conf_croatia = df_bbox.nlargest(10, 'conf')
+        by_conf = df_bbox.nlargest(10, 'conf')
     else:
-        by_conf_croatia = df_bbox.nsmallest(10, 'conf')
+        by_conf = df_bbox.nsmallest(10, 'conf')
 
     fig, axes = plt.subplots(2, 5, figsize=(20, 10))
     axes = axes.flatten()
 
-    for i, (file_idx, ax) in enumerate(zip(by_conf_croatia.index, axes)):
+    for i, (file_idx, ax) in enumerate(zip(by_conf.index, axes)):
         ax.imshow(crop_bbox(df_bbox.iloc[file_idx]))
         ax.set_title(df_bbox.iloc[file_idx]['file'].split("/")[-1] + " + conf : " +
                      str(df_bbox.iloc[file_idx]['conf']))
