@@ -49,7 +49,13 @@ class LynxDataset(Dataset):
             'pattern': image_id["pattern"],
             'date': image_id["date"],
             'location': image_id["location"],
-            'image_number': image_id["image_number"]
+            'image_number': image_id["image_number"],
+            'conf': image_id["conf"],
+            'x': image_id["x"],
+            'y': image_id["y"],
+            'width': image_id["width"],
+            'height': image_id["height"],
+            'filepath': image_id["filepath"]
         }
 
         output_dict = {
