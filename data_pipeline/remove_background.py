@@ -80,4 +80,4 @@ for idx in (pbar := tqdm(range(len(lynxDataset)))):
 
 all_filepath_no_bg += [np.nan] * (len(csv) - len(all_filepath_no_bg))
 csv['filepath_no_bg'] = all_filepath_no_bg
-csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full_no_bg.csv", index=False)
+csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", index=False)
