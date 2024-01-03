@@ -12,7 +12,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class LynxDataset(Dataset):
     def __init__(self, dataset_csv: Path, loader='pil', transform=None,
-                 augmentation=None):
+                 augmentation=None, probabilities=[1/3, 1/3, 1/3]):
         self.dataset_csv = dataset_csv
         self.dataframe = pd.read_csv(dataset_csv)
         self.loader = loader  # 'pil' or 'opencv'
@@ -21,7 +21,7 @@ class LynxDataset(Dataset):
 
         # Type of image to load (classic, bounding box, no background) with a given probability
         self.image_types = ["classic", "bbox", "no_bg"]
-        self.probabilities = [1/3, 1/3, 1/3]
+        self.probabilities = probabilities
 
     def __getitem__(self, idx):
         image_id = self.dataframe.iloc[idx]
