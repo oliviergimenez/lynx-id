@@ -59,7 +59,7 @@ w_noise_noop = 1
 transforms = A.Compose([
     A.FromFloat(dtype='uint8', max_value=None, always_apply=False, p=p_fromfloat),
     A.LongestMaxSize(max_size=1024, p=p_longestmaxsize),  # Resize the longest side to 1024
-    A.PadIfNeeded(min_height=1024, min_width=1024, p=p_pad),  # Pad to make the image 1024x1024
+    A.PadIfNeeded(min_height=1024, min_width=1024, p=p_pad),  # Pad to make the image 1024x1024, pad with an image mirror 
     A.HorizontalFlip(p=p_hflip),
 ])
 
