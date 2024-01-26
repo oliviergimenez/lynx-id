@@ -1,4 +1,5 @@
 import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 """
 Probabilities ands weights of applying transformations
@@ -53,14 +54,12 @@ p_noise = 0.5
 w_noise_multiplicative = 1
 w_noise_noop = 1    
 
-
-
+#    A.FromFloat(dtype='uint8', max_value=None, always_apply=False, p=p_fromfloat),
 
 transforms = A.Compose([
-    A.FromFloat(dtype='uint8', max_value=None, always_apply=False, p=p_fromfloat),
-    A.LongestMaxSize(max_size=1024, p=p_longestmaxsize),  # Resize the longest side to 1024
-    A.PadIfNeeded(min_height=1024, min_width=1024, p=p_pad),  # Pad to make the image 1024x1024
-    A.HorizontalFlip(p=p_hflip),
+    A.LongestMaxSize(max_size=224, p=p_longestmaxsize),  # Resize the longest side to 224
+    A.PadIfNeeded(min_height=224, min_width=224, p=p_pad),  # Pad to make the image 224x224
+    ToTensorV2(),
 ])
 
 

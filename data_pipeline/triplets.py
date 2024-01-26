@@ -274,11 +274,12 @@ class LynxDataset(Dataset):
 
         # Precomputed embeddings and lynx IDs should be available
         anchor_embedding = self.embeddings[anchor_idx]
-        distances = torch.norm(self.embeddings - anchor_embedding, dim=1)
+        distances = torch.norm(self.embeddings - anchor_embedding, dim=1) # L1 distance
         distances[anchor_idx] = float('inf')  # Ignore the anchor itself
 
         # Assuming positive sampling remains random
         positive_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
+        # hard_positive_idx = positive_indices[torch.argmax(positive_distances).item()]
         positive_idx = random.choice(positive_indices) if positive_indices else anchor_idx
         positive_info = self.dataframe.iloc[positive_idx]
         positive_input, positive_output = self.prepare_data(positive_info)
@@ -401,7 +402,7 @@ def collate(batch):
     return batched_input_dict, batched_output_dict
 
 
-def collate_triplet(batch):
+def collate_triplet_old(batch):
     if not batch:
         return {}
 
@@ -418,4 +419,34 @@ def collate_triplet(batch):
             for subkey in ['input', 'output']:
                 batched_data[key][subkey].append(triplet[key][subkey])
 
+    return batched_data
+
+
+def collate_triplet(batch):
+    if not batch:
+        return {}
+
+    # Initialize nested dictionaries for the batch
+    batched_data = {
+        'anchor': {'input': {}, 'output': {}},
+        'positive': {'input': {}, 'output': {}},
+        'negative': {'input': {}, 'output': {}}
+    }
+    
+    # Iterate over each triplet in the batch
+    for triplet in batch:
+        for key in ['anchor', 'positive', 'negative']:
+            for subkey in ['input', 'output']:
+                for feature_key, feature_value in triplet[key][subkey].items():
+                    if feature_key not in batched_data[key][subkey]:
+                        batched_data[key][subkey][feature_key] = []
+                    batched_data[key][subkey][feature_key].append(feature_value)
+                
+                
+    # Post-process features if necessary (e.g., stacking 'image' tensors)
+    for key in ['anchor', 'positive', 'negative']:
+        if 'image' in batched_data[key]['input']:
+            images = batched_data[key]['input']['image']
+            batched_data[key]['input']['image'] = torch.stack(images)
+        # Additional post-processing for other features can be added here
     return batched_data
