@@ -22,6 +22,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
 
+
 class LynxDataset(Dataset):
     def __init__(self, dataset_csv: Path, loader='pil', transform=None, augmentation=None, mode='single', load_triplet_path=None,
                  save_triplet_path=None, model=None, device='auto', verbose=False):
@@ -37,7 +38,7 @@ class LynxDataset(Dataset):
         self.verbose = verbose
 
         self.sampling_strategy = "random"
-        
+
         if device == 'auto':
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -51,8 +52,8 @@ class LynxDataset(Dataset):
                     raise ValueError("A model must be provided for 'triplet' mode.")
                 self.compute_embeddings_and_distances()
                 if self.save_triplet_path:
-                    self.save_triplet_precompute()            
-    
+                    self.save_triplet_precompute()
+
     def save_triplet_precompute(self):
         # Convert PyTorch tensors to NumPy arrays before saving
         embeddings_np = self.embeddings.cpu().numpy()
@@ -71,10 +72,10 @@ class LynxDataset(Dataset):
 
     def compute_embeddings_and_distances(self):
         # Ensure model is on the right device
-        self.model = self.model.to(self.device)   
+        self.model = self.model.to(self.device)
         # Ensure model is in evaluation mode
         self.model.eval()
-        
+
         # Temporarily switch to 'single' mode for embedding computation
         original_mode = self.mode
         self.mode = 'single'
@@ -87,19 +88,19 @@ class LynxDataset(Dataset):
         # List to store embeddings and lynx IDs
         all_embeddings = []
         all_lynx_ids = []
-        
+
         # Iterate over the dataset using DataLoader        
         for batched_input_dict, batched_output_dict in tqdm(loader, desc="Processing images", disable=not self.verbose):
             # Access the batched images and lynx IDs
             batch_images = torch.stack(batched_input_dict['image']).to(self.device)  # Ensure data is on the same device as model
             batch_lynx_ids = batched_output_dict['lynx_id']
-            
+
             # Compute embeddings
             with torch.no_grad():
                 embeddings = self.model(batch_images)
                 embeddings = embeddings.view(embeddings.size(0), -1)
                 all_embeddings.append(embeddings.cpu()) # Move embeddings to CPU to conserve GPU memory
-            
+
             # Collect lynx IDs
             all_lynx_ids.extend(batch_lynx_ids)
 
@@ -114,8 +115,8 @@ class LynxDataset(Dataset):
 
     def load_image(self, filepath):
         # Ensure filepath is a string
-        filepath = str(filepath)        
-        
+        filepath = str(filepath)
+
         # Load the image using the specified loader
         if self.loader == 'opencv':
             img = cv2.imread(filepath)
@@ -157,12 +158,12 @@ class LynxDataset(Dataset):
         }
 
         return input_dict, output_dict
-    
+
     def get_single_item(self, idx):
         image_info = self.dataframe.iloc[idx]
         input_dict, output_dict = self.prepare_data(image_info)
         return input_dict, output_dict
-    
+
     def get_triplet_item_old(self, idx):
         anchor_info = self.dataframe.iloc[idx]
         anchor_input, anchor_output = self.prepare_data(anchor_info)
@@ -208,7 +209,7 @@ class LynxDataset(Dataset):
             # Assuming positive sampling remains random
             positive_idx = self.random_sampling(anchor_info, idx)[0]
             negative_idx = self.hard_sampling(anchor_info, idx)
-            
+
         positive_info = self.dataframe.iloc[positive_idx]
         positive_input, positive_output = self.prepare_data(positive_info)
 
@@ -222,7 +223,7 @@ class LynxDataset(Dataset):
         }
 
         return data
-    
+
     def get_triplet_item(self, idx):
         if self.sampling_strategy == 'random':
             data = self.random_sampling(idx)
@@ -265,7 +266,7 @@ class LynxDataset(Dataset):
             'negative': {'input': negative_input, 'output': negative_output}
         }
         return data
-    
+
 
     def hard_sampling(self, anchor_idx):
         # Load anchor
@@ -303,7 +304,7 @@ class LynxDataset(Dataset):
         }
 
         return data
-    
+
     def __getitem__(self, idx):
         if self.mode == 'single':
             return self.get_single_item(idx)
@@ -311,8 +312,8 @@ class LynxDataset(Dataset):
             return self.get_triplet_item(idx)
         else:
             raise ValueError("Invalid mode. Choose 'single' or 'triplet'.")
-    
-    
+
+
     def __len__(self):
         return len(self.dataframe)
 
@@ -349,7 +350,7 @@ def collate_single(batch):
     first_input, first_output = batch[0]
     batched_input_dict = {key: [] for key in first_input.keys()}
     batched_output_dict = {key: [] for key in first_output.keys()}
-    
+
     # Iterate over each item in the batch
     for input_dict, output_dict in batch:
         # Append data from input and output dictionaries
@@ -358,8 +359,8 @@ def collate_single(batch):
         for key in output_dict:
             batched_output_dict[key].append(output_dict[key])
 
-    return batched_input_dict, batched_output_dict    
-    
+    return batched_input_dict, batched_output_dict
+
 def collate(batch):
     #Old style, to be removed
     # Initialize lists to gather all elements for each key
@@ -432,7 +433,7 @@ def collate_triplet(batch):
         'positive': {'input': {}, 'output': {}},
         'negative': {'input': {}, 'output': {}}
     }
-    
+
     # Iterate over each triplet in the batch
     for triplet in batch:
         for key in ['anchor', 'positive', 'negative']:
@@ -441,8 +442,8 @@ def collate_triplet(batch):
                     if feature_key not in batched_data[key][subkey]:
                         batched_data[key][subkey][feature_key] = []
                     batched_data[key][subkey][feature_key].append(feature_value)
-                
-                
+
+
     # Post-process features if necessary (e.g., stacking 'image' tensors)
     for key in ['anchor', 'positive', 'negative']:
         if 'image' in batched_data[key]['input']:
