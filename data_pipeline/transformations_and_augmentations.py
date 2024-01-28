@@ -1,4 +1,5 @@
 import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 """
 Probabilities ands weights of applying transformations
