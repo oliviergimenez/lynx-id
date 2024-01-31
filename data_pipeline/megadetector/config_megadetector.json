@@ -1,0 +1,22 @@
+{
+    "detector_file": "/gpfswork/rech/ads/uxp55sd/DP-SCR_Identify-and-estimate-density-lynx-population/data_pipeline/megadetector/md_v5a.0.0.pt",
+    "image_file": null,
+    "output_file": null,
+    "recursive": false,
+    "output_relative_filenames": false,
+    "include_max_conf": false,
+    "quiet": true,
+    "image_size": null,
+    "use_image_queue": false,
+    "threshold": 0.1,
+    "checkpoint_frequency": -1,
+    "checkpoint_path": null,
+    "resume_from_checkpoint": null,
+    "allow_checkpoint_overwrite": false,
+    "ncores": 0,
+    "class_mapping_filename": null,
+    "include_image_size": false,
+    "include_image_timestamp": false,
+    "include_exif_data": false,
+    "overwrite_handling": "overwrite"
+}
