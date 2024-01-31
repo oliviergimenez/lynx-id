@@ -14,4 +14,4 @@
 # Install segment-anything in a .local environment
 # pip install git+https://github.com/facebookresearch/segment-anything.git --user --no-cache-dir
 
-srun python preprocess/remove_background.py
+srun python lynx_id/preprocess/remove_background.py
