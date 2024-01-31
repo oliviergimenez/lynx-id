@@ -1,0 +1,15 @@
+PIL (Version not found)
+dateutil (Version not found)
+imageio==2.31.1
+imgaug (Version not found)
+json5==0.9.14
+keract (Version not found)
+kerasgen (Version not found)
+matplotlib==3.7.2
+numpy==1.24.4
+pandas==2.0.3
+sklearn (Version not found)
+stdlib_list==0.9.0
+tensorflow (Version not found)
+tensorflow_addons (Version not found)
+tqdm==4.65.2
