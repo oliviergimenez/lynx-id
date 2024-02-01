@@ -9,7 +9,6 @@ from torch.utils.data import Sampler, Dataset, DataLoader
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-
 from collections import defaultdict
 import numpy as np
 import random
@@ -24,14 +23,18 @@ from tqdm import tqdm
 
 
 class LynxDataset(Dataset):
-    def __init__(self, dataset_csv: Path, loader='pil', transform=None, augmentation=None, mode='single', load_triplet_path=None,
-                 save_triplet_path=None, model=None, device='auto', verbose=False):
+    def __init__(self, dataset_csv: Path, loader='pil', transform=None, augmentation=None, mode='single',
+                 probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None, model=None,
+                 device='auto', verbose=False):
         self.dataset_csv = dataset_csv
         self.dataframe = pd.read_csv(dataset_csv)
         self.loader = loader
         self.transform = transform
         self.augmentation = augmentation
         self.mode = mode
+        # Type of image to load (classic, bounding box, no background) with a given probability
+        self.image_types = ["classic", "bbox", "no_bg"]
+        self.probabilities = probabilities
         self.load_triplet_path = load_triplet_path
         self.save_triplet_path = save_triplet_path
         self.model = model
@@ -58,8 +61,9 @@ class LynxDataset(Dataset):
         # Convert PyTorch tensors to NumPy arrays before saving
         embeddings_np = self.embeddings.cpu().numpy()
         distance_matrix_np = self.distance_matrix.cpu().numpy()
-        #lynx_ids = self.lynx_ids.numpy()
-        np.savez(self.save_triplet_path, embeddings=embeddings_np, distance_matrix=distance_matrix_np, lynx_ids=self.lynx_ids)
+        # lynx_ids = self.lynx_ids.numpy()
+        np.savez(self.save_triplet_path, embeddings=embeddings_np, distance_matrix=distance_matrix_np,
+                 lynx_ids=self.lynx_ids)
 
     def load_triplet_precompute(self):
         try:
@@ -83,7 +87,8 @@ class LynxDataset(Dataset):
         # DataLoader with the custom collate function
         # Consider setting these values based on your system's capabilities
         # ADD AUTO BATCH, auto_numwork
-        loader = DataLoader(self, batch_size=64, shuffle=False, num_workers=10, prefetch_factor=2, collate_fn=collate_single)
+        loader = DataLoader(self, batch_size=64, shuffle=False, num_workers=10, prefetch_factor=2,
+                            collate_fn=collate_single)
 
         # List to store embeddings and lynx IDs
         all_embeddings = []
@@ -92,14 +97,15 @@ class LynxDataset(Dataset):
         # Iterate over the dataset using DataLoader        
         for batched_input_dict, batched_output_dict in tqdm(loader, desc="Processing images", disable=not self.verbose):
             # Access the batched images and lynx IDs
-            batch_images = torch.stack(batched_input_dict['image']).to(self.device)  # Ensure data is on the same device as model
+            batch_images = torch.stack(batched_input_dict['image']).to(
+                self.device)  # Ensure data is on the same device as model
             batch_lynx_ids = batched_output_dict['lynx_id']
 
             # Compute embeddings
             with torch.no_grad():
                 embeddings = self.model(batch_images)
                 embeddings = embeddings.view(embeddings.size(0), -1)
-                all_embeddings.append(embeddings.cpu()) # Move embeddings to CPU to conserve GPU memory
+                all_embeddings.append(embeddings.cpu())  # Move embeddings to CPU to conserve GPU memory
 
             # Collect lynx IDs
             all_lynx_ids.extend(batch_lynx_ids)
@@ -140,7 +146,20 @@ class LynxDataset(Dataset):
         return img
 
     def prepare_data(self, info):
-        img = self.load_image(info["filepath"])
+        image_type_choice = random.choices(self.image_types, weights=self.probabilities)[0]
+        filepath = info["filepath"] if image_type_choice != "no_bg" else info["filepath_no_bg"]
+
+        img = self.load_image(filepath)
+
+        if image_type_choice == "bbox":
+            bbox = info[['x', 'y', 'width', 'height']].values.tolist()
+            x_min = bbox[0]
+            y_min = bbox[1]
+            x_max = bbox[0] + bbox[2]
+            y_max = bbox[1] + bbox[3]
+
+            img = img[int(y_min):int(y_max), int(x_min):int(x_max)]
+
         img = self.apply_transforms(img)
 
         # Prepare the input and output dictionaries
@@ -169,13 +188,15 @@ class LynxDataset(Dataset):
         anchor_input, anchor_output = self.prepare_data(anchor_info)
 
         # Corrected: Randomly select a positive sample
-        positive_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != idx]
+        positive_indices = [i for i in range(len(self.dataframe)) if
+                            self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != idx]
         positive_idx = random.choice(positive_indices) if positive_indices else idx
         positive_info = self.dataframe.iloc[positive_idx]
         positive_input, positive_output = self.prepare_data(positive_info)
 
         # Corrected: Randomly select a negative sample
-        negative_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] != anchor_info['lynx_id']]
+        negative_indices = [i for i in range(len(self.dataframe)) if
+                            self.dataframe.iloc[i]['lynx_id'] != anchor_info['lynx_id']]
         negative_idx = random.choice(negative_indices)
         negative_info = self.dataframe.iloc[negative_idx]
         negative_input, negative_output = self.prepare_data(negative_info)
@@ -240,13 +261,15 @@ class LynxDataset(Dataset):
         anchor_input, anchor_output = self.prepare_data(anchor_info)
 
         # Randomly select a positive sample
-        positive_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
+        positive_indices = [i for i in range(len(self.dataframe)) if
+                            self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
         positive_idx = random.choice(positive_indices) if positive_indices else anchor_idx
         positive_info = self.dataframe.iloc[positive_idx]
         positive_input, positive_output = self.prepare_data(positive_info)
 
         # Randomly select a negative sample
-        negative_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] != anchor_info['lynx_id']]
+        negative_indices = [i for i in range(len(self.dataframe)) if
+                            self.dataframe.iloc[i]['lynx_id'] != anchor_info['lynx_id']]
         negative_idx = random.choice(negative_indices)
         negative_info = self.dataframe.iloc[negative_idx]
         negative_input, negative_output = self.prepare_data(negative_info)
@@ -267,7 +290,6 @@ class LynxDataset(Dataset):
         }
         return data
 
-
     def hard_sampling(self, anchor_idx):
         # Load anchor
         anchor_info = self.dataframe.iloc[anchor_idx]
@@ -275,11 +297,12 @@ class LynxDataset(Dataset):
 
         # Precomputed embeddings and lynx IDs should be available
         anchor_embedding = self.embeddings[anchor_idx]
-        distances = torch.norm(self.embeddings - anchor_embedding, dim=1) # L1 distance
+        distances = torch.norm(self.embeddings - anchor_embedding, dim=1)  # L1 distance
         distances[anchor_idx] = float('inf')  # Ignore the anchor itself
 
         # Assuming positive sampling remains random
-        positive_indices = [i for i in range(len(self.dataframe)) if self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
+        positive_indices = [i for i in range(len(self.dataframe)) if
+                            self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
         # hard_positive_idx = positive_indices[torch.argmax(positive_distances).item()]
         positive_idx = random.choice(positive_indices) if positive_indices else anchor_idx
         positive_info = self.dataframe.iloc[positive_idx]
@@ -313,10 +336,8 @@ class LynxDataset(Dataset):
         else:
             raise ValueError("Invalid mode. Choose 'single' or 'triplet'.")
 
-
     def __len__(self):
         return len(self.dataframe)
-
 
 
 class BalancedBatchSampler(Sampler):
@@ -361,8 +382,9 @@ def collate_single(batch):
 
     return batched_input_dict, batched_output_dict
 
+
 def collate(batch):
-    #Old style, to be removed
+    # Old style, to be removed
     # Initialize lists to gather all elements for each key
     images = []
     sources = []
@@ -442,7 +464,6 @@ def collate_triplet(batch):
                     if feature_key not in batched_data[key][subkey]:
                         batched_data[key][subkey][feature_key] = []
                     batched_data[key][subkey][feature_key].append(feature_value)
-
 
     # Post-process features if necessary (e.g., stacking 'image' tensors)
     for key in ['anchor', 'positive', 'negative']:
