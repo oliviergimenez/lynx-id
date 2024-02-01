@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from collate import collate_single
+from .collate import collate_single
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -23,6 +23,7 @@ class LynxDataset(Dataset):
                  device='auto', verbose=False):
         self.dataset_csv = dataset_csv
         self.dataframe = pd.read_csv(dataset_csv)
+        self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
         self.loader = loader
         self.transform = transform
         self.augmentation = augmentation
@@ -141,8 +142,12 @@ class LynxDataset(Dataset):
         return img
 
     def prepare_data(self, info):
-        image_type_choice = random.choices(self.image_types, weights=self.probabilities)[0]
-        filepath = info["filepath"] if image_type_choice != "no_bg" else info["filepath_no_bg"]
+        if self.has_filepath_no_bg:
+            image_type_choice = random.choices(self.image_types, weights=self.probabilities)[0]
+            filepath = info["filepath"] if image_type_choice != "no_bg" else info["filepath_no_bg"]
+        else:
+            image_type_choice = self.image_types[0]  # classic image
+            filepath = info["filepath"]
 
         img = self.load_image(filepath)
 
@@ -164,7 +169,7 @@ class LynxDataset(Dataset):
             'pattern': info["pattern"],
             'date': info["date"],
             'location': info["location"],
-            'image_number': info["image_number"]
+            'image_number': info["image_number"],
         }
 
         output_dict = {

@@ -14,4 +14,8 @@
 # Install segment-anything in a .local environment
 # pip install git+https://github.com/facebookresearch/segment-anything.git --user --no-cache-dir
 
+module purge
+
+module load pytorch-gpu/py3/2.0.1
+
 srun python lynx_id/preprocess/remove_background.py

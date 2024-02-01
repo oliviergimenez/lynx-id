@@ -7,7 +7,7 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import DataLoader
 
-from lynx_id.data.triplets import LynxDataset, collate
+from lynx_id.data.dataset import LynxDataset, collate
 
 from megadetector.MegaDetector.detection.run_detector_batch import \
     batch_detection

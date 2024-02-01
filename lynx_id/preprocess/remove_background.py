@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 import numpy as np
 import pandas as pd
@@ -9,21 +8,19 @@ from tqdm import tqdm
 
 from segment_anything import SamPredictor, sam_model_registry
 
-sys.path.append("../")
-
-from data_pipeline.dataset import LynxDataset
+from lynx_id.data.dataset import LynxDataset
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--csv_file', type=str, default="/gpfsscratch/rech/ads/commun/datasets/extracted"
                                                     "/lynx_dataset_full.csv")
 parser.add_argument('--save_img_directory', type=str, default="/gpfsscratch/rech/ads/commun/datasets/extracted"
-                                                              "/no_background")
+                                                              "/no_background_debug")
 args = parser.parse_args()
 
 
 # Load the dataset from csv
-lynxDataset = LynxDataset(Path(args.csv_file))
+lynxDataset = LynxDataset(Path(args.csv_file), probabilities=[1, 0, 0])
 
 csv = pd.read_csv(args.csv_file)
 # All paths to images without backgrounds to add them to the csv
@@ -31,8 +28,7 @@ all_filepath_no_bg = []
 
 # Load and init Segment Anything Model (SAM) on GPU
 model_type = "vit_h"
-sam = sam_model_registry[model_type](checkpoint="/gpfswork/rech/ads/uxp55sd/DP-SCR_Identify-and-estimate-density-lynx"
-                                                "-population/data_pipeline/segment_anything/sam_vit_h_4b8939.pth") \
+sam = sam_model_registry[model_type](checkpoint="/gpfswork/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth")\
     .to(device="cuda")
 predictor = SamPredictor(sam)
 
@@ -80,4 +76,5 @@ for idx in (pbar := tqdm(range(len(lynxDataset)))):
 
 all_filepath_no_bg += [np.nan] * (len(csv) - len(all_filepath_no_bg))
 csv['filepath_no_bg'] = all_filepath_no_bg
-csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", index=False)
+print("end")
+# csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", index=False)

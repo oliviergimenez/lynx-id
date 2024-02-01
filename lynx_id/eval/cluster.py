@@ -11,9 +11,9 @@ from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
 
-from data_pipeline.dataset import LynxDataset
-from data_pipeline.transformations_and_augmentations import transforms
-from data_pipeline.triplets import collate_single
+from lynx_id.data.dataset import LynxDataset
+from lynx_id.data.transformations_and_augmentations import transforms
+from lynx_id.data.collate import collate_single
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"{DEVICE=}")
@@ -29,6 +29,7 @@ model.to(DEVICE)
 lynxDataset = LynxDataset(
     Path("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_france.csv"),
     transform=transforms,
+    probabilities=[1, 0, 0]
 )
 dataloader = DataLoader(lynxDataset, batch_size=32, shuffle=False, num_workers=4, collate_fn=collate_single)
 
