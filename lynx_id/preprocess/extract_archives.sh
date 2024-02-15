@@ -19,10 +19,9 @@ for archive in "${ARCHIVES_DIR}"/*.zip; do
     unzip -o "$archive" -d "${EXTRACTED_DIR}"
 done
 
-# echo "Extraction complete."
-
 mkdir -p "${EXTRACTED_DIR}/croatia"
-mv "${EXTRACTED_DIR}/lynx_pic" "${EXTRACTED_DIR}/croatia/"
-mv "${EXTRACTED_DIR}/list_of_lynx_photos1.xlsx" "${EXTRACTED_DIR}/croatia/"
-
+mv -f "${EXTRACTED_DIR}/lynx_pic" "${EXTRACTED_DIR}/croatia/"
+cp "${ARCHIVES_DIR}/croatia/list_of_lynx_photos1.xlsx" "${EXTRACTED_DIR}/croatia/"
 # Note: don't forget to put the .zip and .xlsx files of the Croatian dataset in ${ARCHIVES_DIR}.
+
+echo "Extraction complete."

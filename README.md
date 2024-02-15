@@ -8,13 +8,11 @@ On Jean-Zay, run a command similar to this one at the root of the project:
 
 You can then run code that does `from lynx_id. ... import ...`.
 
-## Running MegaDetector in Python code
 
-**Currently not used** because generating bounding boxes on the fly is too time-consuming.
 
-- Requesting computing resources via SLURM, for example with: `srun --ntasks=1 --gres=gpu:1 --ntasks-per-node=1 --nodes=1 --hint=nomultithread --qos=qos_gpu-dev --account=ads@v100 --cpus-per-task 8 --pty bash
-`
-- `source setup_env.sh`  
-- You can then use the `batch_detection` function, for example, by executing the file `test_megadetector.py`.
+## Preprocess
 
-**Note**: this does not work for notebooks.
+To prepare the data, perform the following instructions in the following order:
+- `./lynx_id/preprocess/extract_archives.sh`
+- `./lynx_id/preprocess/rename.sh`
+- Running the notebook `./lynx_id/preprocess/preprocess_dataset.ipynb` with a V100 GPU

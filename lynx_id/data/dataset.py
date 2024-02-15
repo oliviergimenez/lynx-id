@@ -170,6 +170,12 @@ class LynxDataset(Dataset):
             'date': info["date"],
             'location': info["location"],
             'image_number': info["image_number"],
+            'conf': info["conf"],
+            'x': info["x"],
+            'y': info["y"],
+            'width': info["width"],
+            'height': info["height"],
+            'filepath': info["filepath"]
         }
 
         output_dict = {

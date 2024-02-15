@@ -1,13 +1,0 @@
-Loading pytorch-gpu/py3/2.0.1
-  Loading requirement: cuda/11.7.1 nccl/2.12.12-1-cuda cudnn/8.5.0.96-11.7-cuda
-    gcc/8.5.0 openmpi/4.1.1-cuda intel-mkl/2020.4 magma/2.7.0-cuda sox/14.4.2
-    sparsehash/2.0.3 libjpeg-turbo/2.1.3 ffmpeg/N-94431
-/gpfslocalsup/pub/anaconda-py3/2023.03/envs/pytorch-gpu-2.0.1+py3.10.12/lib/python3.10/site-packages/torchvision-0.15.2a0+fa99a53-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/gpfs7kro/gpfslocalsup/pub/anaconda-py3/2023.03/envs/pytorch-gpu-2.0.1+py3.10.12/lib/python3.10/site-packages/torchvision-0.15.2a0+fa99a53-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
-  warn(
-  0%|          | 0/4743 [00:00<?, ?it/s]  0%|          | 0/4743 [00:00<?, ?it/s]
-Traceback (most recent call last):
-  File "/gpfsdswork/projects/rech/ads/uxp55sd/DP-SCR_Identify-and-estimate-density-lynx-population/lynx_id/preprocess/remove_background.py", line 40, in <module>
-    x = content['x']
-KeyError: 'x'
-srun: error: r10i3n5: task 0: Exited with exit code 1
-srun: Terminating StepId=469195.0
