@@ -8,9 +8,9 @@ project_root = os.path.join(work_dir, folder_name)
 sys.path.append(project_root)
 
 # Importing LynxDataset class and related elements
-from data_pipeline.triplets import LynxDataset
-from data_pipeline.triplets import collate_triplet
-from data_pipeline.transformations_and_augmentations import transforms, augments
+from lynx_id.data.dataset import LynxDataset
+from lynx_id.data.collate import collate_triplet
+from lynx_id.data.transformations_and_augmentations import transforms, augments
 
 # Torch Imports
 import torch
