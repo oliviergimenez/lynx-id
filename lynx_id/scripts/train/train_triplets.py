@@ -1,61 +1,52 @@
+# lynx_id/scripts/train/train_triplets.py
+
 import os
-import sys
 import argparse
-# Construct project root path using the WORK environment variable
-work_dir = os.environ.get('WORK')
-folder_name = 'DP-SCR_Identify-and-estimate-density-lynx-population'
-project_root = os.path.join(work_dir, folder_name)
-sys.path.append(project_root)
-
-# Importing LynxDataset class and related elements
-from lynx_id.data.dataset import LynxDataset
-from lynx_id.data.collate import collate_triplet
-from lynx_id.data.transformations_and_augmentations import transforms, augments
-
-# Torch Imports
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torchvision import models
-from torchvision.models import resnet50 
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import models
 
+# Assuming LynxDataset, collate_triplet, and other necessary modules are correctly defined
+# in your package and the paths are correct.
+from lynx_id.data.dataset import LynxDataset
+from lynx_id.data.collate import collate_triplet
+from lynx_id.data.transformations_and_augmentations import transforms
 
-#from tqdm.notebook import tqdm
-from tqdm import tqdm
-import time
-
-
-def parse_args():
-    # Set up argument parser
+def create_parser():
+    """Create and return the argument parser for the training triplets script."""
     parser = argparse.ArgumentParser(description='Train a model on lynx dataset using triplet loss.')
-    parser.add_argument('--csv', type=str, required=False, help='Path to dataset CSV file', default='/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv')
-    parser.add_argument('--model_weights', type=str, required=False, help='Path to the pretrained model', default='/gpfsscratch/rech/ads/commun/models/resnet50/pretrained_weights.pt')
-    parser.add_argument('--save_path', type=str, default='triplet_precompute', help='Path to save precomputed triplets')
-    parser.add_argument('--load_path', type=str, help='Path to load precomputed triplets', default='/gpfsscratch/rech/ads/commun/precompute/triplet_precompute.npz')
-    parser.add_argument('--device', type=str, choices=['auto', 'cpu', 'cuda'], help='Device to use for training', default='cuda')
+    parser.add_argument('--csv', type=str, required=True, help='Path to dataset CSV file')
+    parser.add_argument('--model_weights', type=str, required=True, help='Path to the pretrained model')
+    parser.add_argument('--save_path', type=str, required=True, help='Path to save precomputed triplets')
+    parser.add_argument('--load_path', type=str, required=True, help='Path to load precomputed triplets')
+    parser.add_argument('--experiment_path', type=str, required=True, help='Path for saving models and logs')
+    parser.add_argument('--device', type=str, choices=['auto', 'cpu', 'cuda'], default='cuda', help='Device to use for training')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
+    return parser
+
+def main(args):
+    print("Running train_triplets with arguments:", args)
     
-    # Parse arguments
-    args = parser.parse_args()
-    return args
+    # Initial setup
+    # Path for saving models
+    os.makedirs(args.save_path, exist_ok=True)
+    os.makedirs(args.experiment_path, exist_ok=True)
 
-def main(args):  
-    # Path for saving models and TensorBoard logs
-    experiment_name = "kg_tests"
-    experiment_path = os.path.join(os.environ.get('ALL_CCFRWORK'), experiment_name)
-    os.makedirs(experiment_path, exist_ok=True)
-
+    
     # Initialize TensorBoard writer
-    writer = SummaryWriter(experiment_path)
-
+    writer = SummaryWriter(args.experiment_path)
+    
+    
     # Initialize dataset
     dataset = LynxDataset(dataset_csv=args.csv, 
                           loader="pil",
-                          transform=transforms,  # Define 'preprocess' earlier in your script
+                          transform=transforms,  # Ensure 'transforms' is defined or imported correctly
                           augmentation=None,
                           mode='triplet',
                           load_triplet_path=args.load_path,
@@ -67,37 +58,38 @@ def main(args):
     dataloader = DataLoader(dataset, 
                             batch_size=64, 
                             shuffle=True, 
-                            collate_fn=collate_triplet,
+                            collate_fn=collate_triplet,  # Ensure 'collate_triplet' is defined or imported correctly
                             prefetch_factor=8,
                             num_workers=8,
                             pin_memory=True,
                             persistent_workers=True)
+
     
-    
-    # Initialize model
+    # Initialize model, ensure you load the model correctly
     model_weights = torch.load(args.model_weights)
     model = models.resnet50(pretrained=False)
     model.load_state_dict(model_weights)        
     model.fc = nn.Identity()  # Replace the final fully connected layer
     model.to(args.device)
 
-    
+    # Training setup
+    num_epochs = 10  # Example epoch count
     # Triplet Loss
-    triplet_loss = nn.TripletMarginLoss(margin=1.0)
-    
+    triplet_loss = nn.TripletMarginLoss(margin=1.0)    
     # Optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.003)
-
-    num_epochs = 10  # Example epoch count
-    # Assuming 'optimizer' is already defined
+    # Scheduler
     T_max = num_epochs  # Here, we set it to the total number of epochs for one cycle
     eta_min = 0.0001  # The minimum learning rate, adjust as needed
-
     scheduler = CosineAnnealingLR(optimizer, T_max=T_max, eta_min=eta_min)
     
-    # Path for saving models
-    save_path = '/gpfswork/rech/ads/commun/models/triplet_embeddings'
-    os.makedirs(save_path, exist_ok=True)
+
+    best_loss = float('inf')
+
+    
+    scaler = GradScaler()
+    # Training loop
+    print("Starting training...")            
 
     best_loss = float('inf')
 
@@ -165,8 +157,14 @@ def main(args):
 
     print(f"Best model saved at: {best_model_path}")
     print(f"Last model saved at: {last_model_path}")    
+    # Don't forget to save your model and close the TensorBoard writer
+    writer.close()
+    print("Training completed.")
+    
     
 if __name__ == '__main__':
-    args = parse_args()
+    # Direct script execution: Parse arguments from command line
+    parser = create_parser()
+    args = parser.parse_args()
     main(args)
-    print("Script end")
+
