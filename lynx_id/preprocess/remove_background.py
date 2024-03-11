@@ -87,3 +87,7 @@ def remove_bg():
     csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", index=False)
 
     return csv
+
+
+if __name__ == "__main__":
+    remove_bg()

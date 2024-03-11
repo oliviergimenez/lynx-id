@@ -16,6 +16,6 @@
 
 module purge
 
-module load pytorch-gpu/py3/2.0.1
+module load pytorch-gpu/py3/2.1.1
 
 srun python lynx_id/preprocess/remove_background.py
