@@ -23,7 +23,7 @@ def get_no_and_multiple_bbox(bbox_dict):
     return no_bbox, multiple_bbox
 
 
-def flatten_bbox(bbox_dict, add_image_without_bbox=True):
+def flatten_bbox(bbox_dict, add_image_without_bbox=True, verbose=False):
     flat_data = []
     for img in bbox_dict['images']:
         if 'detections' in img and img['detections']:
@@ -38,7 +38,8 @@ def flatten_bbox(bbox_dict, add_image_without_bbox=True):
                                   'width': detection['bbox'][2],
                                   'height': detection['bbox'][3]})
         else:
-            print(f"No bbox in {img['file']}")
+            if verbose:
+                print(f"No bbox in {img['file']}")
             if add_image_without_bbox:
                 flat_data.append({'file': img['file'],
                                   'im_width': img['width'],

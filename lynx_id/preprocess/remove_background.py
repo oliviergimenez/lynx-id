@@ -17,6 +17,7 @@ def parse_arguments():
                                                         "/lynx_dataset_full.csv")
     parser.add_argument('--save_img_directory', type=str, default="/gpfsscratch/rech/ads/commun/datasets/extracted"
                                                                   "/no_background")
+    print(parser.parse_args())
     return parser.parse_args()
 
 
@@ -27,15 +28,14 @@ def load_sam_model():
     return SamPredictor(sam)
 
 
-def remove_bg():
-    args = parse_arguments()
+def remove_bg(csv_file="/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", save_img_directory="/gpfsscratch/rech/ads/commun/datasets/extracted/no_background"):
 
-    csv = pd.read_csv(args.csv_file)
+    csv = pd.read_csv(csv_file)
     # All paths to images without backgrounds to add them to the csv
     all_filepath_no_bg = []
 
     # Load the dataset from csv
-    lynxDataset = LynxDataset(Path(args.csv_file), probabilities=[1, 0, 0])
+    lynxDataset = LynxDataset(Path(csv_file), probabilities=[1, 0, 0])
 
     # Load and init Segment Anything Model (SAM) on GPU
     predictor = load_sam_model()
@@ -74,7 +74,7 @@ def remove_bg():
 
             # Save the segmented image
             image_masque_pil = Image.fromarray(image_masque)
-            filepath_no_bg = f'{args.save_img_directory}/no_bg_{filename}'
+            filepath_no_bg = f'{save_img_directory}/no_bg_{filename}'
             image_masque_pil.save(filepath_no_bg)
 
             all_filepath_no_bg.append(filepath_no_bg)
