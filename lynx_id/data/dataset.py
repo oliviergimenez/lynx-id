@@ -18,11 +18,14 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class LynxDataset(Dataset):
-    def __init__(self, dataset_csv: Path, loader='pil', transform=None, augmentation=None, mode='single',
+    def __init__(self, dataset_csv: Path, countries=['all'], loader='pil', transform=None, augmentation=None, mode='single',
                  probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None, model=None,
                  device='auto', verbose=False):
         self.dataset_csv = dataset_csv
         self.dataframe = pd.read_csv(dataset_csv)
+        self.countries = countries
+        if 'all' not in self.countries: 
+            self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
         self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
         self.loader = loader
         self.transform = transform
