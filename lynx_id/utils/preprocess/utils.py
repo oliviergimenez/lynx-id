@@ -11,7 +11,9 @@ def get_no_and_multiple_bbox(bbox_dict):
     multiple_bbox = []
 
     for img in bbox_dict['images']:
-        if not img['detections']:
+        if not 'detections' in img:
+            no_bbox.append(img['file'])
+        elif not img['detections']:
             no_bbox.append(img['file'])
         elif len(img['detections']) > 1:
             multiple_bbox.append(img)

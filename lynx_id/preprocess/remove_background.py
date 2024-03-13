@@ -17,6 +17,7 @@ def parse_arguments():
                                                         "/lynx_dataset_full.csv")
     parser.add_argument('--save_img_directory', type=str, default="/gpfsscratch/rech/ads/commun/datasets/extracted"
                                                                   "/no_background")
+    parser.add_argument('--skip_already_computed', default=False, action=argparse.BooleanOptionalAction)
     return parser.parse_args()
 
 
@@ -29,6 +30,7 @@ def load_sam_model():
 
 def remove_bg():
     args = parse_arguments()
+    print(args.csv_file)
 
     csv = pd.read_csv(args.csv_file)
     # All paths to images without backgrounds to add them to the csv
@@ -42,6 +44,11 @@ def remove_bg():
 
     # Call the model on each image in our dataset
     for idx in (pbar := tqdm(range(len(lynxDataset)))):
+
+        if args.skip_already_computed and 'filepath_no_bg' in csv.columns:
+            if not pd.isna(csv.iloc[idx]['filepath_no_bg']):
+                continue
+
         content = lynxDataset[idx][0]
         image = content['image']
         conf = content['conf']
