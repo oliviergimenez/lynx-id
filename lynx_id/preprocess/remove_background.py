@@ -46,7 +46,9 @@ def remove_bg():
     for idx in (pbar := tqdm(range(len(lynxDataset)))):
 
         if args.skip_already_computed and 'filepath_no_bg' in csv.columns:
-            if not pd.isna(csv.iloc[idx]['filepath_no_bg']):
+            filepath = csv.iloc[idx]['filepath_no_bg']
+            if not pd.isna(filepath) and os.path.exists(filepath):
+                all_filepath_no_bg.append(filepath)
                 continue
 
         content = lynxDataset[idx][0]
@@ -81,6 +83,10 @@ def remove_bg():
         # Save the segmented image
         image_masque_pil = Image.fromarray(image_masque)
         filepath_no_bg = f'{args.save_img_directory}/no_bg_{filename}'
+        counter = 0
+        while os.path.exists(filepath_no_bg):
+            filepath_no_bg = f'{args.save_img_directory}/no_bg_{counter}_{filename}'
+            counter += 1
         image_masque_pil.save(filepath_no_bg)
 
         all_filepath_no_bg.append(filepath_no_bg)
