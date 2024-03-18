@@ -1,3 +1,6 @@
+import concurrent.futures
+import time
+
 import os
 import random
 from pathlib import Path
@@ -18,13 +21,13 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class LynxDataset(Dataset):
-    def __init__(self, dataset_csv: Path, countries=['all'], loader='pil', transform=None, augmentation=None, mode='single',
-                 probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None, model=None,
-                 device='auto', verbose=False):
+    def __init__(self, dataset_csv: Path, countries=['all'], loader='pil', transform=None, augmentation=None,
+                 mode='single', probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None,
+                 model=None, device='auto', verbose=False):
         self.dataset_csv = dataset_csv
         self.dataframe = pd.read_csv(dataset_csv)
         self.countries = countries
-        if 'all' not in self.countries: 
+        if 'all' not in self.countries:
             self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
         self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
         self.loader = loader
@@ -310,8 +313,8 @@ class LynxDataset(Dataset):
         distances[anchor_idx] = float('inf')  # Ignore the anchor itself
 
         # Assuming positive sampling remains random
-        positive_indices = [i for i in range(len(self.dataframe)) if
-                            self.dataframe.iloc[i]['lynx_id'] == anchor_info['lynx_id'] and i != anchor_idx]
+        positive_indices = self.dataframe.index[
+            (self.dataframe['lynx_id'] == anchor_info['lynx_id']) & (self.dataframe.index != anchor_idx)].tolist()
         # hard_positive_idx = positive_indices[torch.argmax(positive_distances).item()]
         positive_idx = random.choice(positive_indices) if positive_indices else anchor_idx
         positive_info = self.dataframe.iloc[positive_idx]
