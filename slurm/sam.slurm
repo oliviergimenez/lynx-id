@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=dev
+#SBATCH --job-name=sam
 #SBATCH --output=./slurm/dev.out
 #SBATCH --error=./slurm/dev.out
 #SBATCH --gres=gpu:1
@@ -16,6 +16,6 @@
 
 module purge
 
-module load pytorch-gpu/py3/2.0.1
+module load pytorch-gpu/py3/2.1.1
 
-srun python lynx_id/preprocess/remove_background.py
+srun python lynx_id/preprocess/remove_background.py --skip_already_computed
