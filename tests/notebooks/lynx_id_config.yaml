@@ -1,0 +1,4 @@
+command: abc
+model-path: xyz_config
+input-data: zyx_config
+output-path: yzx_config
