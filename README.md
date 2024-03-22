@@ -13,6 +13,4 @@ You can then run code that does `from lynx_id. ... import ...`.
 ## Preprocess
 
 To prepare the data, perform the following instructions in the following order:
-- `./lynx_id/preprocess/extract_archives.sh`
-- `./lynx_id/preprocess/rename.sh`
 - Running the notebook `./lynx_id/preprocess/preprocess_dataset.ipynb` with a V100 GPU
