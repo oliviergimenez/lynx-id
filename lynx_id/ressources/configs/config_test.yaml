@@ -1,4 +1,4 @@
 command: check_relative_imports
 model-path: xyz_config
-input-data: zyx_config
+input-data: $ALL_CCFRWORK
 output-path: yzx_config
