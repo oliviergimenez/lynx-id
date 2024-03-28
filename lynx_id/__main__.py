@@ -1,13 +1,38 @@
 import argparse
 import sys
 import importlib
-import yaml  # Make sure to install PyYAML with `pip install PyYAML`
+from importlib import resources
+import yaml
 
-def load_yaml_config(yaml_file_path):
-    """Load a YAML config file."""
-    with open(yaml_file_path, 'r') as file:
-        return yaml.safe_load(file)
+def load_yaml_config(config_path):
+    """Load a YAML config file from a package resource or a filesystem path."""
+    if config_path.startswith("@lynx_id/"):
+        # Extract the path after the special prefix
+        resource_path = config_path[len("@lynx_id/"):]
+        # The package path now is the part before the actual file name
+        package_path, filename = resource_path.rsplit('/', 1)
 
+        # Adjusting to the new importlib.resources.files() approach
+        try:
+            # Construct the path to the resource
+            resource = resources.files('lynx_id').joinpath(package_path).joinpath(filename)
+            if resource.exists():
+                # Reading the content of the file
+                with resource.open('r') as file:
+                    return yaml.safe_load(file)
+            else:
+                raise FileNotFoundError(f"Resource '{filename}' not found in package 'lynx_id' at '{package_path}'.")
+        except FileNotFoundError as e:
+            raise FileNotFoundError(str(e))
+        except ImportError:
+            raise ImportError(f"The package or resource module does not exist.")
+    else:
+        # It's a filesystem path
+        with open(config_path, 'r') as file:
+            return yaml.safe_load(file)
+
+    
+    
 def simulate_cli_args_from_config(config):
     """Convert config dict to a list of CLI-like arguments."""
     simulated_args = []
