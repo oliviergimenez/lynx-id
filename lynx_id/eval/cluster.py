@@ -78,18 +78,14 @@ print(embeddings_knowledge.shape)
 neighbors = NearestNeighbors(n_neighbors=5, algorithm='brute', metric="minkowski").fit(embeddings_knowledge)
 distances, indices = neighbors.kneighbors(embeddings_candidates)
 
-candidates_nearest_neighbors = []
-for nearest_indices in indices:
-    tmp = []
-    for indice in nearest_indices:
-        tmp.append(lynxDataset[indice][1]['lynx_id'])
-    candidates_nearest_neighbors.append(tmp)
+candidates_nearest_neighbors = [
+    [lynxDataset[indice][1]['lynx_id'] for indice in nearest_indices]
+    for nearest_indices in indices
+]
 print(f"{candidates_nearest_neighbors=}")
 
 # True lynx_id
-candidates_id = []
-for indice in candidates_indices:
-    candidates_id.append(lynxDataset[indice.item()][1]['lynx_id'])
+candidates_id = [lynxDataset[indice.item()][1]['lynx_id'] for indice in candidates_indices]
 print(f"{candidates_id=}")
 
 # n-knn
@@ -141,9 +137,4 @@ n_gt = torch.tensor([100])
 map_k = calc_map(candidates_acc_k_tensor, n_gt=n_gt, top_k=top_k)
 map_k_mean = compute_mean_per_top_k(map_k)
 print(f"{map_k_mean=}")
-
-# Precision@k
-precision_k = calc_precision(candidates_acc_k_tensor, n_gt=n_gt, top_k=top_k)
-precision_k_mean = compute_mean_per_top_k(precision_k)
-print(f"{precision_k_mean=}")
 
