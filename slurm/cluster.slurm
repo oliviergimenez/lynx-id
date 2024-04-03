@@ -15,4 +15,4 @@ module purge
 
 module load pytorch-gpu/py3/2.0.1
 
-srun python cluster.py
+srun python lynx_id/eval/cluster.py

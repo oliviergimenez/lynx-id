@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=dev
+#SBATCH --job-name=sam
 #SBATCH --output=./slurm/dev.out
 #SBATCH --error=./slurm/dev.out
 #SBATCH --gres=gpu:1
@@ -14,4 +14,8 @@
 # Install segment-anything in a .local environment
 # pip install git+https://github.com/facebookresearch/segment-anything.git --user --no-cache-dir
 
-srun python preprocess/remove_background.py
+module purge
+
+module load pytorch-gpu/py3/2.1.1
+
+srun python lynx_id/preprocess/remove_background.py --skip_already_computed
