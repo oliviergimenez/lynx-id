@@ -1,20 +1,18 @@
 # DP-SCR_Identify-and-estimate-density-lynx-population
-Re-identify individuals and estimate population density from eurasian lynx population by Deep Learning and Spatial Capture Recapture
 
-Internship dates : february 2023 - august 2023
+## Running code outside the `lynx_id` module
 
-Author :  Marie Joigneau
+To run code outside `lynx_id` folder that uses this module (for example, files in the `test` folder), you need to **install the project locally in editable mode**.  
+On Jean-Zay, first load the module like that :
+- `module load pytorch-gpu/py3/2.2.0'
+Then run a command similar to this one at the root of the project: 
+- `pip install --editable . --user --no-cache-dir`  
 
-Supervisor : Olivier Gimenez https://www.cefe.cnrs.fr/fr/recherche/bc/bbp/843-c/253-olivier-gimenez 
+You can then run code that does `from lynx_id. ... import ...`.
 
-What you have :   
-- A first part presenting all my script and my folder organization necessary to do my deep learning models and predictions with some of my lighest DL models (< 100MB for github). Note that I haven't put the lynx pictures as they belong to organizations. Also I haven't put all my deep learning model here as it is too huge for github. You can ask it by email.  
-- A second part for the Office Français de la Biodiversité (OFB) or anyone wanting to do prediction with a deep learning model. It contains user guide (in French and English) and several scripts. Same here, I haven't put my best model here as it is too huge for github. You can ask it by email.   
 
-More precise README are in each part.
 
-I haven't put the Spatial Capture Recapture R script as I have taken most of the part from a Olivier Gimenez R script.   
+## Preprocess
 
-If you have any questions don't hesitate to contact me,   
-Best,   
-Marie Joigneau
+To prepare the data, perform the following instructions in the following order:
+- Running the notebook `./lynx_id/preprocess/preprocess_dataset.ipynb` with a V100 GPU
