@@ -1,6 +1,7 @@
 # lynx_id/train.py
 import argparse
 
+
 def main(args):
     parser = argparse.ArgumentParser(description="Run training.")
     parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train for.')
@@ -11,9 +12,8 @@ def main(args):
 
     print(f"Training started with epochs={parsed_args.epochs} and batch_size={parsed_args.batch_size}.")
 
+
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1:])
 
-    
-    
+    main(sys.argv[1:])

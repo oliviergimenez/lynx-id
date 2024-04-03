@@ -1,9 +1,10 @@
 # lynx_id/scripts/infer/infer.py
 import argparse
 
+
 def main(args=None):
     parser = argparse.ArgumentParser(description="Inference script.")
-    
+
     # Define your arguments here
     parser.add_argument('--model-path', type=str, required=True, help='Path to the model for inference.')
     parser.add_argument('--input-data', type=str, required=True, help='Path to input data for inference.')
@@ -18,8 +19,8 @@ def main(args=None):
     print(f"Input data: {parsed_args.input_data}")
     print(f"Output path: {parsed_args.output_path}")
 
+
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1:])
 
-    
+    main(sys.argv[1:])

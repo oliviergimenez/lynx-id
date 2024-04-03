@@ -2,7 +2,6 @@
 import argparse
 import sys
 
-
 from ..data import transforms as transforms_from_init
 from ..data.transformations_and_augmentations import transforms as transforms_from_file
 
@@ -15,18 +14,19 @@ def create_parser():
     parser.add_argument('--output-path', type=str, required=True, help='Path for saving inference outputs.')
     return parser
 
+
 def main(args=None):
     print("Running train_triplets with arguments:", args)
-    
+
     # Example usage of the parsed arguments
     print(f"This is the infer script.")
     print(f"Model path: {args.model_path}")
     print(f"Input data: {args.input_data}")
     print(f"Output path: {args.output_path}")
-    
+
     print(transforms_from_file)
 
-    
+
 if __name__ == '__main__':
     # Direct script execution: Parse arguments from command line
     parser = create_parser()
