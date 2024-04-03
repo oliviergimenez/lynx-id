@@ -17,17 +17,17 @@ def main(args=None):
     parser = create_parser()
 
     # Parse the arguments passed to main
-    parsed_args = parser.parse_args(args)
+    #parsed_args = parser.parse_args(args)
 
     # Example usage of the parsed arguments
     print(f"This is the infer script.")
-    print(f"Model path: {parsed_args.model_path}")
-    print(f"Input data: {parsed_args.input_data}")
-    print(f"Output path: {parsed_args.output_path}")
+    print(f"Model path: {args.model_path}")
+    print(f"Input data: {args.input_data}")
+    print(f"Output path: {args.output_path}")
 
 
 if __name__ == '__main__':
     # Direct script execution: Parse arguments from command line
     parser = create_parser()
-    args = parser.parse_args(sys.argv[1:])
-    main(args=sys.argv[1:])
+    args = parser.parse_args()
+    main(args)
