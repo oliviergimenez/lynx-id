@@ -13,12 +13,6 @@ def create_parser():
 
 
 def main(args=None):
-    # Obtain the parser
-    parser = create_parser()
-
-    # Parse the arguments passed to main
-    #parsed_args = parser.parse_args(args)
-
     # Example usage of the parsed arguments
     print(f"This is the infer script.")
     print(f"Model path: {args.model_path}")
