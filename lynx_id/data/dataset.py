@@ -21,14 +21,19 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class LynxDataset(Dataset):
-    def __init__(self, dataset_csv: Path, countries=['all'], loader='pil', transform=None, augmentation=None,
+    def __init__(self, dataset_csv: Path = None, countries=['all'], loader='pil', transform=None, augmentation=None,
                  mode='single', probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None,
-                 model=None, device='auto', verbose=False):
+                 model=None, device='auto', folder_path_images: Path = None, inference: bool = False, verbose=False):
         self.dataset_csv = dataset_csv
-        self.dataframe = pd.read_csv(dataset_csv)
+        self.folder_path_images = folder_path_images
+        if self.dataset_csv:
+            self.dataframe = pd.read_csv(dataset_csv)
+        elif folder_path_images:
+            self.dataframe = self.convert_folder_images_to_csv()
         self.countries = countries
-        if 'all' not in self.countries:
-            self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
+        if self.countries:
+            if 'all' not in self.countries:
+                self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
         self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
         self.loader = loader
         self.transform = transform
@@ -40,6 +45,7 @@ class LynxDataset(Dataset):
         self.load_triplet_path = load_triplet_path
         self.save_triplet_path = save_triplet_path
         self.model = model
+        self.inference = inference
         self.verbose = verbose
 
         self.sampling_strategy = "random"
@@ -58,6 +64,11 @@ class LynxDataset(Dataset):
                 self.compute_embeddings_and_distances()
                 if self.save_triplet_path:
                     self.save_triplet_precompute()
+
+    def convert_folder_images_to_csv(self):
+        filepaths = [os.path.join(self.folder_path_images, filename)
+                     for filename in os.listdir(self.folder_path_images)]
+        return pd.DataFrame({'filepath': filepaths})
 
     def save_triplet_precompute(self):
         # Convert PyTorch tensors to NumPy arrays before saving
@@ -168,25 +179,32 @@ class LynxDataset(Dataset):
 
         img = self.apply_transforms(img)
 
-        # Prepare the input and output dictionaries
-        input_dict = {
-            'image': img,
-            'source': info["source"],
-            'pattern': info["pattern"],
-            'date': info["date"],
-            'location': info["location"],
-            'image_number': info["image_number"],
-            'conf': info["conf"],
-            'x': info["x"],
-            'y': info["y"],
-            'width': info["width"],
-            'height': info["height"],
-            'filepath': info["filepath"]
-        }
+        if self.inference:
+            input_dict = {
+                'image': img,
+            }
+            output_dict = {}
 
-        output_dict = {
-            'lynx_id': info["lynx_id"]
-        }
+        else:
+            # Prepare the input and output dictionaries
+            input_dict = {
+                'image': img,
+                'source': info["source"],
+                'pattern': info["pattern"],
+                'date': info["date"],
+                'location': info["location"],
+                'image_number': info["image_number"],
+                'conf': info["conf"],
+                'x': info["x"],
+                'y': info["y"],
+                'width': info["width"],
+                'height': info["height"],
+                'filepath': info["filepath"]
+            }
+
+            output_dict = {
+                'lynx_id': info["lynx_id"]
+            }
 
         return input_dict, output_dict
 
