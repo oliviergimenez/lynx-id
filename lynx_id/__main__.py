@@ -91,8 +91,12 @@ def main():
     # Command check
     # Parser to identify if there is a YAML configuration file
     parser = argparse.ArgumentParser(description="Main interface for lynx_id operations.", add_help=False)
-    parser.add_argument('--command', choices=['train', 'train_triplets', 'eval', 'infer', 'check_relative_imports'],
-                        required=True, help='Subcommand to run')
+    parser.add_argument(
+        '--command',
+        choices=['train', 'train_triplets', 'eval', 'infer', 'check_relative_imports', 'download_model'],
+        required=True,
+        help='Subcommand to run'
+    )
 
     combined_args = config_fakecli_args + prepend_command_if_needed(cli_remaining_args)
     command_arg, _ = parser.parse_known_args(combined_args)
@@ -105,7 +109,8 @@ def main():
         'train_triplets': 'lynx_id.scripts.train.train_triplets',
         'eval': 'lynx_id.scripts.eval',
         'infer': 'lynx_id.scripts.infer',
-        'check_relative_imports': 'lynx_id.scripts.check_relative_imports'
+        'check_relative_imports': 'lynx_id.scripts.check_relative_imports',
+        'download_model': 'lynx_id.scripts.download_model'
     }
 
     if command_arg.command in command_to_module.keys():
@@ -132,7 +137,7 @@ def main():
             print(f"The module {module_path} does not have a 'create_parser' function or it's not callable.")
             sys.exit(1)
     else:
-        print(f"Unknown lynx_id command: {args.command}")
+        print(f"Unknown lynx_id command")
         sys.exit(1)
 
 

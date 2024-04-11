@@ -2,7 +2,6 @@
 import argparse
 import sys
 
-from ..data import transforms as transforms_from_init
 from ..data.transformations_and_augmentations import transforms as transforms_from_file
 
 
