@@ -1,3 +1,17 @@
+# Documentation
+# Exclude the documentation build directory
+docs/build/
+
+# Other sections for Python, IDEs, etc.
+*.pyc
+__pycache__/
+.env/
+.venv/
+.idea/
+.vscode/
+*.swp
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
