@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from ..utils.split_dataset import complex_split_dataset
 from .collate import collate_single
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -24,16 +25,25 @@ class LynxDataset(Dataset):
     def __init__(self, dataset_csv: Path = None, countries=['all'], loader='pil', transform=None, augmentation=None,
                  mode='single', probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None,
                  model=None, device='auto', folder_path_images: Path = None, inference: bool = False, verbose=False):
+        self.inference = inference
         self.dataset_csv = dataset_csv
         self.folder_path_images = folder_path_images
-        if self.dataset_csv:
-            self.dataframe = pd.read_csv(dataset_csv)
-        elif folder_path_images:
+        # Check if dataset_csv is a DataFrame
+        if isinstance(self.dataset_csv, pd.DataFrame):
+            self.dataframe = dataset_csv
+        # Check if dataset_csv is a Path or string path, and load the CSV
+        elif isinstance(self.dataset_csv, (Path, str)):
+            self.dataset_csv = Path(dataset_csv)  # Ensure it's a Path object
+            self.dataframe = pd.read_csv(self.dataset_csv)
+        elif self.dataset_csv is None and self.folder_path_images:
             self.dataframe = self.convert_folder_images_to_csv()
+            self.inference = True
+        else:
+            raise TypeError("dataset_csv must be a pandas DataFrame or a path to a CSV file")
+
         self.countries = countries
-        if self.countries:
-            if 'all' not in self.countries:
-                self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
+        if 'all' not in self.countries:
+            self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
         self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
         self.loader = loader
         self.transform = transform
@@ -45,7 +55,6 @@ class LynxDataset(Dataset):
         self.load_triplet_path = load_triplet_path
         self.save_triplet_path = save_triplet_path
         self.model = model
-        self.inference = inference
         self.verbose = verbose
 
         self.sampling_strategy = "random"
@@ -368,3 +377,44 @@ class LynxDataset(Dataset):
 
     def __len__(self):
         return len(self.dataframe)
+
+    def split(self, threshold=3, high_occurrence_ratios=(0.8, 0.1, 0.1), low_occurrence_ratios="same", unseen_ratio=0.2,
+              random_seed=42):
+        """
+        Splits the dataset into train, validation, and test sets using an external function,
+        and returns three LynxDataset instances for these splits.
+
+        Parameters:
+        - threshold: Minimum number of occurrences to be considered high occurrence.
+        - high_occurrence_ratios: Tuple of ratios for splitting high occurrence 'lynx_id's into train, val, test.
+        - low_occurrence_ratios: Tuple of ratios for splitting seen low occurrence 'lynx_id's into train, val, test,
+        or "same" to use the same as high_occurrence_ratios.
+        - unseen_ratio: Ratio for splitting low occurrence 'lynx_id's into seen and unseen.
+        - random_seed: Seed for random operations to ensure reproducibility.
+        """
+        # Call the external complex_split_dataset function to perform the split
+        train_df, val_df, test_df, _ = complex_split_dataset(self.dataframe, threshold=threshold,
+                                                             high_occurrence_ratios=high_occurrence_ratios,
+                                                             low_occurrence_ratios=low_occurrence_ratios,
+                                                             unseen_ratio=unseen_ratio, random_seed=random_seed)
+
+        # Instantiate new LynxDataset objects for each split
+        train_dataset = LynxDataset(train_df, countries=self.countries, loader=self.loader,
+                                    transform=self.transform, augmentation=self.augmentation,
+                                    mode=self.mode, probabilities=self.probabilities,
+                                    load_triplet_path=self.load_triplet_path, save_triplet_path=self.save_triplet_path,
+                                    model=self.model, device=self.device, verbose=self.verbose)
+
+        val_dataset = LynxDataset(val_df, countries=self.countries, loader=self.loader,
+                                  transform=self.transform, augmentation=self.augmentation,
+                                  mode=self.mode, probabilities=self.probabilities,
+                                  load_triplet_path=self.load_triplet_path, save_triplet_path=self.save_triplet_path,
+                                  model=self.model, device=self.device, verbose=self.verbose)
+
+        test_dataset = LynxDataset(test_df, countries=self.countries, loader=self.loader,
+                                   transform=self.transform, augmentation=self.augmentation,
+                                   mode=self.mode, probabilities=self.probabilities,
+                                   load_triplet_path=self.load_triplet_path, save_triplet_path=self.save_triplet_path,
+                                   model=self.model, device=self.device, verbose=self.verbose)
+
+        return train_dataset, val_dataset, test_dataset

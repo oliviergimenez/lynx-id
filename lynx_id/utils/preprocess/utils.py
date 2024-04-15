@@ -105,3 +105,9 @@ def measure_performance(dataset, num_samples=100):
         _ = dataset[i]
     end_time = time.time()
     return end_time - start_time
+
+
+
+def csv_random_equilibrated_splitter(csv_path):
+    
+    return 0

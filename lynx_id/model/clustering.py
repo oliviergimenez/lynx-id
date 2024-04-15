@@ -57,6 +57,7 @@ class ClusteringModel:
                                       candidates_nearest_neighbors]
 
         candidates_predicted_new = self.check_new_individual(
+            embeddings=embeddings_candidates,
             candidates_predicted=candidates_predicted_1_knn,
             threshold=0.5,
         )
