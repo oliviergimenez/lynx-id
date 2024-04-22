@@ -35,6 +35,7 @@ class ClusteringModel:
         self.indices = None
         self.cluster_variances = None
         self.cluster_means = None
+        self.candidates_nearest_neighbors = None
 
     def load_safetensors(self):
         with safe_open(self.embeddings_knowledge, framework="pt", device="cpu") as f:
@@ -46,24 +47,26 @@ class ClusteringModel:
     def clustering(self, embeddings_candidates: torch.tensor):
         self.distances, self.indices = self.nearest_neighbors.kneighbors(embeddings_candidates)
 
-        candidates_nearest_neighbors = [
+        self.candidates_nearest_neighbors = [
             [self.lynx_ids_knowledge[indice] for indice in nearest_indices]
             for nearest_indices in self.indices
         ]
 
-        candidates_predicted_1_knn = [candidate[0] for candidate in candidates_nearest_neighbors]
+        return self.candidates_nearest_neighbors
 
-        candidates_predicted_n_knn = [Counter(candidate).most_common(1)[0][0] for candidate in
-                                      candidates_nearest_neighbors]
+    def one_knn(self):
+        return [candidate[0] for candidate in self.candidates_nearest_neighbors]
 
-        candidates_predicted_new = self.check_new_individual(
-            embeddings=embeddings_candidates,
-            candidates_predicted=candidates_predicted_1_knn,
-            threshold=0.5,
-        )
+    def n_knn(self):
+        return [Counter(candidate).most_common(1)[0][0] for candidate in self.candidates_nearest_neighbors]
 
-        return candidates_nearest_neighbors, candidates_predicted_1_knn, candidates_predicted_n_knn, \
-            candidates_predicted_new
+    def update_candidates_nearest_neighbors_new(self, candidates_predicted_new_individual):
+        self.candidates_nearest_neighbors = [
+            ["New"] + neighbors[0:-1] if candidate == "New" else neighbors
+            for candidate, neighbors in zip(candidates_predicted_new_individual, self.candidates_nearest_neighbors)
+        ]
+
+        return self.candidates_nearest_neighbors
 
     def check_new_individual(self, embeddings: torch.Tensor, candidates_predicted: List[str] = None,
                              success_percentage_threshold: int = 100, threshold: float = None,
@@ -95,7 +98,7 @@ class ClusteringModel:
                     in_confidence_interval = num_successful_cases >= min_successful_cases
 
                 else:
-                    in_confidence_interval = True
+                    in_confidence_interval = torch.tensor(True)
 
                 if in_confidence_interval.item() is False:
                     candidates_predicted_local[index] = "New"
@@ -123,4 +126,3 @@ class ClusteringModel:
             intervals[lynx] = interval_formatted
 
         return intervals
-
