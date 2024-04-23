@@ -60,13 +60,16 @@ class ClusteringModel:
     def n_knn(self):
         return [Counter(candidate).most_common(1)[0][0] for candidate in self.candidates_nearest_neighbors]
 
-    def update_candidates_nearest_neighbors_new(self, candidates_predicted_new_individual):
-        self.candidates_nearest_neighbors = [
+    def compute_candidates_nearest_neighbors_new(self, candidates_predicted_new_individual,
+                                                 update_candidates_nearest_neighbors: bool = False):
+        updated = [
             ["New"] + neighbors[0:-1] if candidate == "New" else neighbors
             for candidate, neighbors in zip(candidates_predicted_new_individual, self.candidates_nearest_neighbors)
         ]
+        if update_candidates_nearest_neighbors:
+            self.candidates_nearest_neighbors = updated
 
-        return self.candidates_nearest_neighbors
+        return updated
 
     def check_new_individual(self, embeddings: torch.Tensor, candidates_predicted: List[str] = None,
                              success_percentage_threshold: int = 100, threshold: float = None,
@@ -115,8 +118,9 @@ class ClusteringModel:
             self.cluster_variances[lynx] = torch.var(self.embeddings_knowledge[lynx_idx], dim=0).tolist()
             self.cluster_means[lynx] = torch.mean(self.embeddings_knowledge[lynx_idx], dim=0).tolist()
 
-    def compute_confidence_intervals(self, confidence):
-        self.compute_cluster_means_variances()
+    def compute_confidence_intervals(self, confidence, force_recompute_cluster_stats=False):
+        if (self.cluster_variances is None and self.cluster_variances is None) or force_recompute_cluster_stats is True:
+            self.compute_cluster_means_variances()
         intervals = {}
 
         for (lynx, mean), variance in zip(tqdm(self.cluster_means.items(), desc="compute_confidence_intervals"),
