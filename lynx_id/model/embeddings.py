@@ -27,13 +27,13 @@ class EmbeddingModel:
         lynx_ids = []
         self.model.eval()
 
-        for i, batch in enumerate(tqdm(dataloader, total=len(dataloader))):
-            batch_tensor = torch.stack(batch[0]['image']).to(self.device).float()
+        with torch.no_grad():
+            for i, batch in enumerate(tqdm(dataloader, total=len(dataloader))):
+                batch_tensor = torch.stack(batch[0]['image']).to(self.device).float()
 
-            if save_lynx_id_path:
-                lynx_ids.extend(batch[1]['lynx_id'])
+                if save_lynx_id_path:
+                    lynx_ids.extend(batch[1]['lynx_id'])
 
-            with torch.no_grad():
                 batch_embeddings = self.model(batch_tensor)
 
                 if embeddings is None:
