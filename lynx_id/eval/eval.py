@@ -1,5 +1,8 @@
+import numpy as np
 import torch
 from oml.functional.metrics import calc_cmc, calc_map
+
+from ..model.clustering import ClusteringModel
 
 
 class EvalMetrics:
@@ -74,3 +77,28 @@ class EvalMetrics:
             if total_references_individual > 0 else 0
 
         return {"precision": precision, "recall": recall}
+
+    def get_best_threshold(self, clustering_model: ClusteringModel, min_threshold: float = 0.0,
+                           max_threshold: float = 10.0, step: float = 0.1):
+        best_accuracy = 0
+        best_threshold = None
+        thresholds = np.arange(min_threshold, max_threshold + step, step)
+
+        # Precompute clustering_model.one_knn() outside the loop
+        candidates_predicted = clustering_model.one_knn()
+
+        for threshold in thresholds:
+            candidates_predicted_new_individual = clustering_model.check_new_individual(
+                candidates_predicted=candidates_predicted,
+                threshold=threshold,
+            )
+
+            accuracy = self.compute_accuracy(
+                lynx_id_predicted=candidates_predicted_new_individual,
+            )
+
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_threshold = threshold
+
+        return best_threshold

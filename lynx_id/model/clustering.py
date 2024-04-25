@@ -71,7 +71,7 @@ class ClusteringModel:
 
         return updated
 
-    def check_new_individual(self, embeddings: torch.Tensor, candidates_predicted: List[str] = None,
+    def check_new_individual(self, candidates_predicted: List[str], embeddings: torch.Tensor = None,
                              success_percentage_threshold: int = 100, threshold: float = None,
                              confidence: float = 0.997):
         candidates_predicted_local = candidates_predicted.copy()
