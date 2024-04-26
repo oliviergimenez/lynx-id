@@ -1,5 +1,4 @@
-import concurrent.futures
-import time
+from __future__ import annotations
 
 import os
 import random
@@ -15,8 +14,8 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from ..utils.split_dataset import complex_split_dataset
 from .collate import collate_single
+from ..utils.split_dataset import complex_split_dataset
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -73,6 +72,8 @@ class LynxDataset(Dataset):
                 self.compute_embeddings_and_distances()
                 if self.save_triplet_path:
                     self.save_triplet_precompute()
+
+        self.new_lynx_id = None  # only used for val/test dataset
 
     def convert_folder_images_to_csv(self):
         filepaths = [os.path.join(self.folder_path_images, filename)
@@ -418,3 +419,23 @@ class LynxDataset(Dataset):
                                    model=self.model, device=self.device, verbose=self.verbose)
 
         return train_dataset, val_dataset, test_dataset
+
+    def compute_new_lynx_id(self, train_dataset: LynxDataset):
+        lynx_id_counts = self.dataframe['lynx_id'].value_counts()
+        train_lynx_id_counts = train_dataset.dataframe['lynx_id'].value_counts()
+
+        new_individuals = set(lynx_id_counts.index) - set(train_lynx_id_counts.index)
+
+        lynx_id = self.dataframe['lynx_id'].tolist()
+
+        # Update of true (New) `lynx_id` data in lynx_id
+        count_new = 0
+        for i, element in enumerate(tqdm(self.dataframe['lynx_id'].tolist())):
+            if element in new_individuals:
+                lynx_id[i] = "New"
+                count_new += 1
+
+        print(f"{count_new=}")
+
+        self.new_lynx_id = lynx_id
+        return self.new_lynx_id

@@ -9,17 +9,21 @@ import pandas as pd
 
 
 class EmbeddingModel:
-    def __init__(self, model_path: str, device: str):
+    def __init__(self, model_path: str, device: str, base_resnet: bool = False):
         self.model_path = model_path
         self.device = device
+        self.base_resnet = base_resnet
 
         self.model = self.load_model()
 
     def load_model(self):
         model_weights = torch.load(self.model_path)
         model = models.resnet50(pretrained=False)
-        model.fc = nn.Identity()
+        if not self.base_resnet:
+            model.fc = nn.Identity()
         model.load_state_dict(model_weights)
+        if self.base_resnet:
+            model.fc = nn.Identity()
         return model.to(self.device)
 
     def compute_embeddings(self, dataloader: DataLoader, save_embeddings_path: str = None, save_lynx_id_path: str = None):
