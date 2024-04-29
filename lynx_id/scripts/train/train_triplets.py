@@ -112,7 +112,8 @@ def main(args):
     )
 
     # Dataloader initialization
-    train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, shuffle=True, collate_fn=collate_triplet)
+    train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, shuffle=True,
+                                                 collate_fn=collate_triplet)
     train_dataloader_single = create_dataloader(dataset=train_dataset_single, shuffle=False, collate_fn=collate_single)
     val_dataloader = create_dataloader(dataset=val_dataset, shuffle=False, collate_fn=collate_single)
     test_dataloader = create_dataloader(dataset=test_dataset, shuffle=False, collate_fn=collate_single)
@@ -280,7 +281,6 @@ def main(args):
     )
 
     accuracy_no_threshold = test_eval_metrics.compute_accuracy(lynx_id_predicted=clustering_model.one_knn())
-    writer.add_scalar("test_accuracy_1_knn_no_threshold", accuracy_no_threshold)
     print(f"TEST | Accuracy 1-KNN: {accuracy_no_threshold}")
 
     candidates_predicted_new_individual = clustering_model.check_new_individual(
@@ -294,13 +294,10 @@ def main(args):
         individual_name="New",
         verbose=True
     )
-    writer.add_scalar("test_precision_new", precision_recall['precision'])
-    writer.add_scalar("test_recall_new", precision_recall['recall'])
 
     accuracy_threshold = test_eval_metrics.compute_accuracy(
         lynx_id_predicted=candidates_predicted_new_individual,
     )
-    writer.add_scalar("test_accuracy_1_knn_threshold", accuracy_threshold)
     print(f"TEST | Accuracy 1-KNN threshold: {accuracy_threshold}")
 
     # CMC@k + mAP@k
@@ -312,12 +309,26 @@ def main(args):
     print(f"{cmc_k_mean=}")
     print(f"{map_k_mean=}")
 
-    def log_scalar(writer, data, prefix):
-        for key, value in data.items():
-            writer.add_scalar(f"{prefix}_{key}", value)
+    def format_cmc_map(data, prefix):
+        data = {prefix + "@" + str(key): value for key, value in data.items()}
+        return data
 
-    log_scalar(writer, cmc_k_mean, "cmc")
-    log_scalar(writer, map_k_mean, "map")
+    cmc_k_mean = format_cmc_map(cmc_k_mean, "cmc")
+    map_k_mean = format_cmc_map(map_k_mean, "map")
+
+    metric_dict = {
+        'test_new_precision': precision_recall['precision'],
+        'test_new_recall': precision_recall['recall'],
+        'test_accuracy_1_knn_no_threshold': accuracy_no_threshold,
+        'test_accuracy_1_knn_threshold': accuracy_threshold
+    }
+
+    writer.add_hparams(
+        hparam_dict={
+            'threshold': threshold
+        },
+        metric_dict=metric_dict | cmc_k_mean | map_k_mean
+    )
 
     print("Evaluation completed")
 
