@@ -26,6 +26,10 @@ class LynxImage:
         return self.__str__()
 
 
+def location_lynx_image(lynx_images: list[LynxImage]):
+    return [lynx_img.location for lynx_img in lynx_images]
+
+
 class ClusteringModel:
     def __init__(self, embeddings_knowledge: torch.Tensor | str, lynx_infos_knowledge: pd.DataFrame | str,
                  n_neighbors: int = 5, algorithm: str = 'brute', metric: str = 'minkowski'):
@@ -164,6 +168,7 @@ class ClusteringModel:
 
         return intervals
 
-    def most_recent_date_lynx_id(self, lynx_id):
-        latest_date = self.lynx_infos_knowledge.groupby('lynx_id')['date'].max()[lynx_id]
-        return latest_date
+    def most_recent_date_lynx_id(self, lynx_images: list[LynxImage]):
+        latest_date_per_lynx_id = self.lynx_infos_knowledge.groupby('lynx_id')['date'].max()
+        latest_dates = [latest_date_per_lynx_id.get(lynx_img.lynx_id, None) for lynx_img in lynx_images]
+        return latest_dates
