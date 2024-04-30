@@ -4,6 +4,7 @@ import os
 
 import pandas as pd
 import torch
+from safetensors.torch import save_file
 from torch.utils.data import DataLoader
 
 from lynx_id.data.collate import collate_single
@@ -22,7 +23,11 @@ def create_parser():
                         required=True,
                         help='Path to folder containing images (at least one image) or .csv file (columns: filepath, '
                              'optional columns: date, location).')
-    parser.add_argument('--output-path', type=str, required=True, help='Path to output .csv file.')
+    parser.add_argument('--output-informations-path', type=str, required=True, help='Path to output .csv file.')
+    parser.add_argument('--output-embeddings-path',
+                        type=str,
+                        required=True,
+                        help='Path to which the embeddings of our new images will be saved')
     parser.add_argument('--knowledge-embeddings-path',
                         type=str,
                         required=True,
@@ -119,7 +124,10 @@ def main(args=None):
 
         }
     )
-    pd.concat([output_results_prediction, output_results_nearest], axis=1).to_csv(args.output_path)
+    pd.concat([output_results_prediction, output_results_nearest], axis=1).to_csv(args.output_informations_path)
+
+    # Save embeddings of our new images
+    save_file({"embeddings": embeddings}, args.output_embeddings_path)
 
 
 if __name__ == '__main__':
