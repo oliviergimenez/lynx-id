@@ -26,17 +26,23 @@ class EmbeddingModel:
             model.fc = nn.Identity()
         return model.to(self.device)
 
-    def compute_embeddings(self, dataloader: DataLoader, save_embeddings_path: str = None, save_lynx_id_path: str = None):
+    def compute_embeddings(self, dataloader: DataLoader, save_embeddings_path: str = None, save_lynx_infos_path: str = None):
         embeddings = None
         lynx_ids = []
+        dates = []
+        filepaths = []
+        locations = []
         self.model.eval()
 
         with torch.no_grad():
             for i, batch in enumerate(tqdm(dataloader, total=len(dataloader))):
                 batch_tensor = torch.stack(batch[0]['image']).to(self.device).float()
 
-                if save_lynx_id_path:
+                if save_lynx_infos_path:
                     lynx_ids.extend(batch[1]['lynx_id'])
+                    dates.extend(batch[0]['date'])
+                    filepaths.extend(batch[0]['filepath'])
+                    locations.extend(batch[0]['location'])
 
                 batch_embeddings = self.model(batch_tensor)
 
@@ -45,11 +51,16 @@ class EmbeddingModel:
                 else:
                     embeddings = torch.cat((embeddings, batch_embeddings), dim=0)
 
-        if save_embeddings_path:
+        if save_embeddings_path:  # safetensors format
             save_file({"embeddings": embeddings}, save_embeddings_path)
 
-        if save_lynx_id_path:
-            df_lynx_ids = pd.DataFrame(lynx_ids, columns=['lynx_id'])
-            df_lynx_ids.to_csv(save_lynx_id_path)
+        if save_lynx_infos_path:  # csv format
+            df_lynx_infos = pd.DataFrame({
+                "filepath": filepaths,
+                "lynx_id": lynx_ids,
+                "date": dates,
+                "location": locations
+            })
+            df_lynx_infos.to_csv(save_lynx_infos_path)
 
         return embeddings

@@ -2,25 +2,25 @@ import numpy as np
 import torch
 from oml.functional.metrics import calc_cmc, calc_map
 
-from ..model.clustering import ClusteringModel
+from ..model.clustering import ClusteringModel, LynxImage
 
 
 class EvalMetrics:
-    def __init__(self, candidates_nearest_neighbors: list[list[str]], lynx_id_true: list[str],
+    def __init__(self, candidates_nearest_neighbors: list[list[LynxImage]], lynx_id_true: list[str],
                  top_k: tuple[int] = (1, 2, 3, 4, 5)):
         self.candidates_nearest_neighbors = candidates_nearest_neighbors
         self.lynx_id_true = lynx_id_true
         self.top_k = top_k
 
     # Compute some metrics
-    def compute_accuracy(self, lynx_id_predicted: list[str], verbose=False):
+    def compute_accuracy(self, lynx_id_predicted: list[LynxImage], verbose=False):
         correct_predictions = 0
         total_predictions = 0
 
         for i, (p, r) in enumerate(zip(lynx_id_predicted, self.lynx_id_true)):
             total_predictions += 1
-            output = f"Candidate {i} | Prediction: {p} | True label: {r}"
-            if p == r:
+            output = f"Candidate {i} | Prediction: {p.lynx_id} | True label: {r}"
+            if p.lynx_id == r:
                 correct_predictions += 1
                 output = "\x1b[6;30;42m" + output + "\x1b[0m"
 
@@ -33,7 +33,7 @@ class EvalMetrics:
 
     def compute_tensor_matching_candidates(self):
         candidates_acc_k_list = [
-            [1 if candidate == candidate_id else 0 for candidate in candidates_row] for
+            [1 if candidate.lynx_id == candidate_id else 0 for candidate in candidates_row] for
             candidates_row, candidate_id in zip(self.candidates_nearest_neighbors, self.lynx_id_true)
         ]
         return torch.tensor(candidates_acc_k_list, dtype=torch.bool)
@@ -56,11 +56,12 @@ class EvalMetrics:
 
         return cmc_k_mean, map_k_mean
 
-    def precision_recall_individual(self, candidates_predicted: list[str], individual_name: str = "New",
+    def precision_recall_individual(self, candidates_predicted: list[LynxImage], individual_name: str = "New",
                                     verbose: bool = False):
         # Initialize counters
-        correct_prediction_individual = sum(p == r == "New" for p, r in zip(candidates_predicted, self.lynx_id_true))
-        total_predictions_individual = candidates_predicted.count("New")
+        correct_prediction_individual = sum(p.lynx_id == r == "New"
+                                            for p, r in zip(candidates_predicted, self.lynx_id_true))
+        total_predictions_individual = sum(1 for image in candidates_predicted if image.lynx_id == "New")
         total_references_individual = self.lynx_id_true.count("New")
 
         # Display information if verbose mode is enabled

@@ -1,28 +1,41 @@
 # lynx_id/scripts/infer/infer.py
 import argparse
 import os
-import sys
+
+import pandas as pd
+import torch
+from torch.utils.data import DataLoader
+
+from lynx_id.data.collate import collate_single
+from lynx_id.data.transformations_and_augmentations import transforms
+from lynx_id.model.clustering import ClusteringModel
+from lynx_id.model.embeddings import EmbeddingModel
 from ..data.dataset import LynxDataset
 
 
 def create_parser():
     """Create and return the argument parser for the inference script."""
     parser = argparse.ArgumentParser(description="Inference script.")
-    parser.add_argument('--model-path', type=str, required=True, help='Path to image folder (at least one image).')
+    parser.add_argument('--model-path', type=str, required=True, help='Path to model weights.')
     parser.add_argument('--input-data',
                         type=str,
                         required=True,
                         help='Path to folder containing images (at least one image) or .csv file (columns: filepath, '
                              'optional columns: date, location).')
     parser.add_argument('--output-path', type=str, required=True, help='Path to output .csv file.')
-    parser.add_argument('--embeddings-path',
+    parser.add_argument('--knowledge-embeddings-path',
                         type=str,
                         required=True,
                         help='Path to the file containing the knowledge base of all our known individuals in '
                              '`safetensors` format (embeddings torch.tensor).')
-    parser.add_argument('--update-base-knowledge',
-                        action=argparse.BooleanOptionalAction,
-                        help='Whether or not to update the embeddings file with the new images.')
+    parser.add_argument('--knowledge-informations-path',
+                        type=str,
+                        required=True,
+                        help='Path to a .csv file containing information about the lynx in our knowledge base.')
+    parser.add_argument('--threshold',
+                        type=float,
+                        default=1.40,
+                        help='Distance threshold at which the lynx in the image is considered to be a new individual.')
     return parser
 
 
@@ -30,6 +43,13 @@ def main(args=None):
     # Example usage of the parsed arguments
     print(f"This is the infer script.")
     print(f"{args.model_path=}")
+    print(f"{args.input_data=}")
+    print(f"{args.output_path=}")
+    print(f"{args.knowledge_embeddings_path=}")
+    print(f"{args.knowledge_informations_path=}")
+
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"{DEVICE=}")
 
     print(f"{args.input_data=}")
     # check presence image or csv
@@ -43,14 +63,59 @@ def main(args=None):
     if not image_csv_found:
         raise RuntimeError(f"No image files found in the directory '{args.input_data}'.")
 
-    print(f"{args.output_path=}")
-    print(f"{args.embeddings_path=}")
-    print(f"{args.output_path=}")
-    print(f"{args.update_base_knowledge=}")
+    # Dataset initialization
+    dataset = LynxDataset(
+        folder_path_images=args.input_data,
+        loader='pil',
+        transform=transforms,
+        probabilities=[1, 0, 0],
+        mode='single',
+        device='auto'
+    )
 
-    lynx
+    # TODO: Optimization CPU ? GPU ?
+    dataloader = DataLoader(
+        dataset,
+        batch_size=32,
+        shuffle=False,
+        num_workers=4,
+        collate_fn=collate_single
+    )
 
+    # Load embedding model
+    embedding_model = EmbeddingModel(
+        model_path="/gpfswork/rech/ads/uxp55sd/downloaded_model/model_best_0.512.pth",
+        device=DEVICE
+    )
 
+    # Compute embeddings
+    embeddings = embedding_model.compute_embeddings(dataloader)
+
+    clustering_model = ClusteringModel(
+        embeddings_knowledge=args.knowledge_embeddings_path,
+        lynx_infos_knowledge=args.knowledge_informations_path,
+        n_neighbors=5,
+        algorithm="brute",
+        metric="minkowski",
+    )
+
+    candidates_nearest_neighbors = clustering_model.clustering(embeddings.cpu())
+
+    candidates_predicted_new_individual = clustering_model.check_new_individual(
+        candidates_predicted=clustering_model.one_knn(),
+        threshold=args.threshold,
+    )
+
+    # Generate csv result file
+    output_results_nearest = pd.DataFrame(candidates_nearest_neighbors, columns=["neighbor_1", "neighbor_2", "neighbor_3", "neighbor_4", "neighbor_5"])
+    output_results_prediction = pd.DataFrame(
+        {
+            "individual_predicted": candidates_predicted_new_individual,
+            "latest_picture_predicted": clustering_model.most_recent_date_lynx_id(
+                clustering_model.information_from_id(candidates_predicted_new_individual)['lynx_id'])
+        }
+    )
+    pd.concat([output_results_prediction, output_results_nearest], axis=1).to_csv(args.output_path)
 
 
 
