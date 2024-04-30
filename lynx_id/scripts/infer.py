@@ -1,6 +1,8 @@
 # lynx_id/scripts/infer/infer.py
 import argparse
 import os
+import random
+import string
 
 import pandas as pd
 import torch
@@ -13,6 +15,10 @@ from lynx_id.model.clustering import ClusteringModel, location_lynx_image
 from lynx_id.model.embeddings import EmbeddingModel
 from ..data.dataset import LynxDataset
 
+
+def generate_random_lynx_id(length):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
 
 def create_parser():
     """Create and return the argument parser for the inference script."""
@@ -107,6 +113,23 @@ def main(args=None):
         candidates_predicted=clustering_model.one_knn(),
         threshold=args.threshold,
     )
+
+    # Generate random lynx_id for New individuals
+    is_new = []
+    predicted_lynx_ids = []
+    all_lynx_ids = set(clustering_model.lynx_infos_knowledge['lynx_id'].unique())
+    for candidate_predicted in candidates_predicted_new_individual:
+        if candidate_predicted.lynx_id == "New":
+            random_lynx_id = generate_random_lynx_id(10)
+            while random_lynx_id in all_lynx_ids:
+                random_lynx_id = generate_random_lynx_id(10)
+            predicted_lynx_ids.append(random_lynx_id)
+            is_new.append(True)
+            all_lynx_ids.add(random_lynx_id)
+        else:
+            is_new.append(False)
+            predicted_lynx_ids.append(candidate_predicted.lynx_id)
+
     # Update of nearest neighbours if a new individual has been detected
     updated_candidates_nearest_neighbors = clustering_model.compute_candidates_nearest_neighbors_new(
         candidates_predicted_new_individual)
@@ -118,7 +141,8 @@ def main(args=None):
     output_results_prediction = pd.DataFrame(
         {
             "filepath": dataset.dataframe.filepath.tolist(),
-            "individual_predicted": candidates_predicted_new_individual,
+            "individual_predicted": predicted_lynx_ids,
+            "is_new": is_new,
             "latest_picture_individual_predicted": clustering_model.most_recent_date_lynx_id(candidates_predicted_new_individual),
             "location": location_lynx_image(candidates_predicted_new_individual)
 
