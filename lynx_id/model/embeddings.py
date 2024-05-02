@@ -35,7 +35,7 @@ class EmbeddingModel:
         self.model.eval()
 
         with torch.no_grad():
-            for i, batch in enumerate(tqdm(dataloader, total=len(dataloader))):
+            for i, batch in enumerate(tqdm(dataloader, total=len(dataloader), desc="Compute embeddings")):
                 batch_tensor = torch.stack(batch[0]['image']).to(self.device).float()
 
                 if save_lynx_infos_path:

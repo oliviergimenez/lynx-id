@@ -166,6 +166,8 @@ def main(args=None):
         knowledge_embeddings_path=args.new_knowledge_embeddings_path
     )
 
+    print("End of knowledge_base script.")
+
 
 if __name__ == '__main__':
     # Direct script execution: Parse arguments from command line

@@ -114,8 +114,6 @@ def main(args=None):
         threshold=args.threshold,
     )
 
-    # TODO: generate random lynx_id during check_new_individual
-    # TODO: clustering sequentiel ? pour ajouter les indivudus temporairement à la base de connaissance ?
     # Generate random lynx_id for New individuals
     is_new = []
     predicted_lynx_ids = []
@@ -153,6 +151,8 @@ def main(args=None):
 
     # Save embeddings of our new images
     save_file({"embeddings": embeddings}, args.output_embeddings_path)
+
+    print('End of inference.')
 
 
 if __name__ == '__main__':
