@@ -93,7 +93,7 @@ def main():
     parser = argparse.ArgumentParser(description="Main interface for lynx_id operations.", add_help=False)
     parser.add_argument(
         '--command',
-        choices=['train', 'train_triplets', 'eval', 'infer', 'check_relative_imports', 'download_model'],
+        choices=['train', 'train_triplets', 'eval', 'infer', 'check_relative_imports', 'download_model', 'knowledge_base'],
         required=True,
         help='Subcommand to run'
     )
@@ -110,7 +110,8 @@ def main():
         'eval': 'lynx_id.scripts.eval',
         'infer': 'lynx_id.scripts.infer',
         'check_relative_imports': 'lynx_id.scripts.check_relative_imports',
-        'download_model': 'lynx_id.scripts.download_model'
+        'download_model': 'lynx_id.scripts.download_model',
+        'knowledge_base': 'lynx_id.scripts.knowledge_base'
     }
 
     if command_arg.command in command_to_module.keys():

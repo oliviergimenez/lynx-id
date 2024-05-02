@@ -114,6 +114,8 @@ def main(args=None):
         threshold=args.threshold,
     )
 
+    # TODO: generate random lynx_id during check_new_individual
+    # TODO: clustering sequentiel ? pour ajouter les indivudus temporairement à la base de connaissance ?
     # Generate random lynx_id for New individuals
     is_new = []
     predicted_lynx_ids = []
@@ -144,11 +146,10 @@ def main(args=None):
             "individual_predicted": predicted_lynx_ids,
             "is_new": is_new,
             "latest_picture_individual_predicted": clustering_model.most_recent_date_lynx_id(candidates_predicted_new_individual),
-            "location": location_lynx_image(candidates_predicted_new_individual)
-
+            "location_closest_individual": location_lynx_image(candidates_predicted_new_individual)
         }
     )
-    pd.concat([output_results_prediction, output_results_nearest], axis=1).to_csv(args.output_informations_path)
+    pd.concat([output_results_prediction, output_results_nearest], axis=1).to_csv(args.output_informations_path, index=False)
 
     # Save embeddings of our new images
     save_file({"embeddings": embeddings}, args.output_embeddings_path)

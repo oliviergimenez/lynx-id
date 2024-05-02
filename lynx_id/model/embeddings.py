@@ -61,6 +61,6 @@ class EmbeddingModel:
                 "date": dates,
                 "location": locations
             })
-            df_lynx_infos.to_csv(save_lynx_infos_path)
+            df_lynx_infos.to_csv(save_lynx_infos_path, index=False)
 
         return embeddings
