@@ -90,7 +90,7 @@ def main(args=None):
 
     # Load embedding model
     embedding_model = EmbeddingModel(
-        model_path="/gpfswork/rech/ads/uxp55sd/downloaded_model/model_best_0.512.pth",
+        model_path=args.model_path,
         device=DEVICE
     )
 
