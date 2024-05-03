@@ -20,6 +20,7 @@ extensions = [
     'sphinx.ext.napoleon',  # For Google or NumPy style docstrings,
     'sphinx.ext.viewcode', # To include links to the library 
     'myst_parser', # To parse md files
+    'nbsphinx'
 ]
 
 templates_path = ['_templates']
