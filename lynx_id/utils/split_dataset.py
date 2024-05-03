@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import random
 
+
 def naive_split_dataset(csv_path, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15, random_seed=None):
     """
     Split a CSV file into train, validation, and test datasets.
@@ -53,12 +54,11 @@ def naive_split_dataset(csv_path, train_ratio=0.7, val_ratio=0.15, test_ratio=0.
     val_path = dataset_csv_path.parent / f"{dataset_csv_path.stem}_val.csv"
     test_path = dataset_csv_path.parent / f"{dataset_csv_path.stem}_test.csv"
 
-    #train_df.to_csv(train_path, index=False)
-    #val_df.to_csv(val_path, index=False)
-    #test_df.to_csv(test_path, index=False)
+    # train_df.to_csv(train_path, index=False)
+    # val_df.to_csv(val_path, index=False)
+    # test_df.to_csv(test_path, index=False)
 
-    return train_df, val_df, test_df #str(train_path), str(val_path), str(test_path)
-
+    return train_df, val_df, test_df  # str(train_path), str(val_path), str(test_path)
 
 
 def plot_occurrence_distribution(df, column_name='lynx_id'):
@@ -124,20 +124,23 @@ def split_and_assign(df_subset, split_ratios, visibility='seen', random_seed=42)
             else:
                 return pd.DataFrame(), pd.DataFrame(), df_subset
         else:
-            val, test = train_test_split(df_subset, train_size=split_ratios[1] / (split_ratios[1] + split_ratios[2]), random_state=random_seed)
+            val, test = train_test_split(df_subset, train_size=split_ratios[1] / (split_ratios[1] + split_ratios[2]),
+                                         random_state=random_seed)
     else:
         if len(df_subset) > 1:
             train, temp = train_test_split(df_subset, train_size=split_ratios[0], random_state=random_seed)
             if len(temp) == 1:
                 # If only one sample is left, directly assign it to either val or test based on a random choice.
-                temp['set'] = 'val' if random.random() < split_ratios[1] / (split_ratios[1] + split_ratios[2]) else 'test'
+                temp['set'] = 'val' if random.random() < split_ratios[1] / (
+                            split_ratios[1] + split_ratios[2]) else 'test'
                 temp['lynx_id_visibility'] = visibility
                 if temp['set'].iloc[0] == 'val':
                     val = temp
                 else:
                     test = temp
             else:
-                val, test = train_test_split(temp, train_size=split_ratios[1] / (split_ratios[1] + split_ratios[2]), random_state=random_seed)
+                val, test = train_test_split(temp, train_size=split_ratios[1] / (split_ratios[1] + split_ratios[2]),
+                                             random_state=random_seed)
         else:
             # Single sample for the entire dataset
             assigned_set = np.random.choice(['train', 'val', 'test'], p=split_ratios)
@@ -158,8 +161,8 @@ def split_and_assign(df_subset, split_ratios, visibility='seen', random_seed=42)
     return train, val, test
 
 
-
-def complex_split_dataset(df, threshold=3, high_occurrence_ratios=(0.7, 0.2, 0.1), low_occurrence_ratios="same", unseen_ratio=0.2, random_seed=42):
+def complex_split_dataset(df, threshold=3, high_occurrence_ratios=(0.7, 0.2, 0.1), low_occurrence_ratios="same",
+                          unseen_ratio=0.2, random_seed=42):
     """
     Splits the dataset based on 'lynx_id' occurrence into high and low occurrence groups, then further into
     train, validation, and test sets with special handling for low occurrence 'lynx_id's.
@@ -185,14 +188,14 @@ def complex_split_dataset(df, threshold=3, high_occurrence_ratios=(0.7, 0.2, 0.1
 
     # Calculate 'lynx_id' occurrence
     occurrence_count = df['lynx_id'].value_counts()
-    
+
     # Determine high and low occurrence 'lynx_id's
     high_occurrence_ids = occurrence_count[occurrence_count >= threshold].index
     low_occurrence_ids = occurrence_count[occurrence_count < threshold].index
-    
+
     # Initialize empty DataFrames
     train_df, val_df, test_df = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-    
+
     # Process high occurrence 'lynx_id's
     for lynx_id in high_occurrence_ids:
         lynx_id_df = df[df['lynx_id'] == lynx_id]
@@ -200,17 +203,19 @@ def complex_split_dataset(df, threshold=3, high_occurrence_ratios=(0.7, 0.2, 0.1
         train_df = pd.concat([train_df, train])
         val_df = pd.concat([val_df, val])
         test_df = pd.concat([test_df, test])
-    
+
     # Split low occurrence data into seen and unseen
-    seen_low_occurrence_ids, unseen_low_occurrence_ids = train_test_split(low_occurrence_ids, train_size=1-unseen_ratio, random_state=random_seed)
-    
+    seen_low_occurrence_ids, unseen_low_occurrence_ids = train_test_split(low_occurrence_ids,
+                                                                          train_size=1 - unseen_ratio,
+                                                                          random_state=random_seed)
+
     # Process unseen low occurrence
     for lynx_id in unseen_low_occurrence_ids:
         lynx_id_df = df[df['lynx_id'] == lynx_id]
         _, val, test = split_and_assign(lynx_id_df, [0, 0.5, 0.5], visibility='unseen')  # Split between val and test
         val_df = pd.concat([val_df, val])
         test_df = pd.concat([test_df, test])
-    
+
     # Process seen low occurrence
     for lynx_id in seen_low_occurrence_ids:
         lynx_id_df = df[df['lynx_id'] == lynx_id]
@@ -218,10 +223,10 @@ def complex_split_dataset(df, threshold=3, high_occurrence_ratios=(0.7, 0.2, 0.1
         train_df = pd.concat([train_df, train])
         val_df = pd.concat([val_df, val])
         test_df = pd.concat([test_df, test])
-    
+
     # Concatenate all dataframes to get a complete dataset
     complete_df = pd.concat([train_df, val_df, test_df]).reset_index(drop=True)
-    
+
     return train_df, val_df, test_df, complete_df
 
 # Example usage

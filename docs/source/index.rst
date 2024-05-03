@@ -8,11 +8,18 @@ Welcome to Lynx-ID's documentation!
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
-   
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Installation
+
+   installation
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User guide
+
+   tutorials/user_guide_inference
 
 
 
