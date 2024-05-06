@@ -20,7 +20,8 @@ extensions = [
     'sphinx.ext.napoleon',  # For Google or NumPy style docstrings,
     'sphinx.ext.viewcode',  # To include links to the library
     'myst_parser',  # To parse md files
-    'nbsphinx'
+    'nbsphinx',
+    'IPython.sphinxext.ipython_console_highlighting'  # Syntax highlighting in code cells
 ]
 
 templates_path = ['_templates']
