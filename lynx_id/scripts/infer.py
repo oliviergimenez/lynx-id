@@ -47,6 +47,16 @@ def create_parser():
                         type=float,
                         default=1.40,
                         help='Distance threshold at which the lynx in the image is considered to be a new individual.')
+    parser.add_argument('--batch-size',
+                        type=int,
+                        default=1,
+                        help='Number of images to load per batch. Choose a number 2 to the nth power. A large number '
+                             'could saturate your memory and cause the inference to crash.')
+    parser.add_argument('--num-workers',
+                        type=int,
+                        default=0,
+                        help='how many subprocesses to use for data loading. 0 means that the data will be loaded in '
+                             'the main process. (default: 0)')
     return parser
 
 
@@ -79,12 +89,11 @@ def main(args=None):
         device='auto'
     )
 
-    # TODO: Optimization CPU ? GPU ?
     dataloader = DataLoader(
         dataset,
-        batch_size=32,
+        batch_size=args.batch_size,
         shuffle=False,
-        num_workers=4,
+        num_workers=args.num_workers,
         collate_fn=collate_single
     )
 

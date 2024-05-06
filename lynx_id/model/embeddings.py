@@ -17,7 +17,7 @@ class EmbeddingModel:
         self.model = self.load_model()
 
     def load_model(self):
-        model_weights = torch.load(self.model_path)
+        model_weights = torch.load(self.model_path,  map_location=self.device)
         model = models.resnet50(pretrained=False)
         if not self.base_resnet:
             model.fc = nn.Identity()
