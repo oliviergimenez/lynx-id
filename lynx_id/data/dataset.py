@@ -1,4 +1,7 @@
 from __future__ import annotations
+import concurrent.futures
+import time
+import warnings
 
 import os
 import random
@@ -20,13 +23,17 @@ from ..utils.split_dataset import complex_split_dataset
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+
 class LynxDataset(Dataset):
     def __init__(self, dataset_csv: Path = None, countries=['all'], loader='pil', transform=None, augmentation=None,
                  mode='single', probabilities=[1 / 3, 1 / 3, 1 / 3], load_triplet_path=None, save_triplet_path=None,
-                 model=None, device='auto', folder_path_images: Path = None, inference: bool = False, verbose=False):
+                 model=None, device='auto', folder_path_images: Path = None, inference: bool = False, verbose=False,
+                 set='all', **kwargs):
         self.inference = inference
         self.dataset_csv = dataset_csv
         self.folder_path_images = folder_path_images
+        self.verbose = verbose
+
         # Check if dataset_csv is a DataFrame
         if isinstance(self.dataset_csv, pd.DataFrame):
             self.dataframe = dataset_csv
@@ -40,22 +47,35 @@ class LynxDataset(Dataset):
         else:
             raise TypeError("dataset_csv must be a pandas DataFrame or a path to a CSV file")
 
+        # Filter the dataframe by the 'set' column if necessary and available
+        if 'set' in self.dataframe.columns and set != 'all':
+            self.dataframe = self.dataframe[self.dataframe['set'] == set]
+        elif set != 'all' and 'set' not in self.dataframe.columns:
+            warnings.warn("The 'set' column was not found in the dataset. Proceeding to split the dataset based on provided parameters.")
+            train_df, val_df, test_df, complete_df = complex_split_dataset(self.dataframe, **kwargs)
+            if set == 'train':
+                self.dataframe = train_df
+            elif set == 'val':
+                self.dataframe = val_df
+            elif set == 'test':
+                self.dataframe = test_df
+            else:
+                raise ValueError(f"Invalid set parameter '{set}'. Expected 'train', 'val', or 'test'.")
+
+        # Initialize class attributes
         self.countries = countries
         if 'all' not in self.countries:
             self.dataframe = self.dataframe[self.dataframe['country'].isin(self.countries)]
-        self.has_filepath_no_bg = True if "filepath_no_bg" in self.dataframe.columns else False
+        self.has_filepath_no_bg = "filepath_no_bg" in self.dataframe.columns
         self.loader = loader
         self.transform = transform
         self.augmentation = augmentation
         self.mode = mode
-        # Type of image to load (classic, bounding box, no background) with a given probability
         self.image_types = ["classic", "bbox", "no_bg"]
         self.probabilities = probabilities
         self.load_triplet_path = load_triplet_path
         self.save_triplet_path = save_triplet_path
         self.model = model
-        self.verbose = verbose
-
         self.sampling_strategy = "random"
 
         if device == 'auto':
