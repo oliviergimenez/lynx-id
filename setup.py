@@ -3,6 +3,9 @@
 
 from setuptools import find_packages, setup
 
+with open('requirements.txt') as req_fd:
+    INSTALL_REQUIRES = req_fd.read().splitlines()
+
 setup(
     name="lynx_id",
     version="0.0.1",
@@ -16,9 +19,5 @@ setup(
             'ressources/tests/data_test.txt',  # test data file
         ],
     },
-    install_requires=[
-        "idr_torch>=2.0.0",
-        "torch",
-        "tqdm",
-    ],
+    install_requires=INSTALL_REQUIRES
 )

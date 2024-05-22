@@ -1,0 +1,4 @@
+idr_torch>=2.0.0
+torch
+tqdm
+dinov2 @ git+https://github.com/thomasbtnfr/dinov2.git
