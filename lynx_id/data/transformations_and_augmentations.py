@@ -108,7 +108,7 @@ augments = A.Compose([
 ])
 
 # Define the transformations using Albumentations
-image_size = 1400
+image_size = 896
 transforms_dinov2 = A.Compose([
     A.LongestMaxSize(max_size=image_size, p=p_longestmaxsize),  # Resize the longest side to image_size   
     A.PadIfNeeded(min_height=image_size, min_width=image_size, p=p_pad),  # Pad to make the image image_size*image_size    
