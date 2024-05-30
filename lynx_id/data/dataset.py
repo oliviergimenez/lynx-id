@@ -95,6 +95,7 @@ class LynxDataset(Dataset):
 
         self.new_lynx_id = None  # only used for val/test dataset
 
+    
     def convert_folder_images_to_csv(self):
         filepaths = [os.path.join(self.folder_path_images, filename)
                      for filename in os.listdir(self.folder_path_images)]
@@ -146,7 +147,7 @@ class LynxDataset(Dataset):
 
             # Compute embeddings
             with torch.no_grad():
-                embeddings = self.model(batch_images)
+                embeddings = self.model(batch_images.float())
                 embeddings = embeddings.view(embeddings.size(0), -1)
                 all_embeddings.append(embeddings.cpu())  # Move embeddings to CPU to conserve GPU memory
 
@@ -180,12 +181,21 @@ class LynxDataset(Dataset):
         return img
 
     def apply_transforms(self, img):
-        # Apply transformations (e.g., resizing)
-        if self.transform:
-            img = self.transform(image=img)['image']
+
+        # Convert tensor to numpy array before applying augmentations
+        if isinstance(img, torch.Tensor):
+            if img.ndimension() == 3:  # Check if the tensor has three dimensions (CxHxW)
+                img = img.permute(1, 2, 0)  # Convert from CxHxW to HxWxC
+            img = img.cpu().numpy()  # Convert from torch tensor to numpy array
+        
         # Apply augmentations
         if self.augmentation:
             img = self.augmentation(image=img)['image']
+
+        # Apply transformations (e.g., resizing, normalization, tensor conversion)
+        if self.transform:
+            img = self.transform(image=img)['image']
+        
         return img
 
     def prepare_data(self, info):
@@ -340,8 +350,8 @@ class LynxDataset(Dataset):
             distances = torch.norm(self.embeddings - anchor_embedding, dim=1)
             positive_distance = distances[positive_idx].item()
             negative_distance = distances[negative_idx].item()
-            print(f"Random positive distance for anchor {anchor_idx}: {positive_distance}")
-            print(f"Random negative distance for anchor {anchor_idx}: {negative_distance}")
+            #print(f"Random positive distance for anchor {anchor_idx}: {positive_distance}")
+            #print(f"Random negative distance for anchor {anchor_idx}: {negative_distance}")
 
         data = {
             'anchor': {'input': anchor_input, 'output': anchor_output},
