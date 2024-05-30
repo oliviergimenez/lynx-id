@@ -22,7 +22,7 @@ from lynx_id.eval.eval import EvalMetrics
 from lynx_id.model.clustering import ClusteringModel
 from lynx_id.model.embeddings import EmbeddingModel
 from lynx_id.utils import dinov2_utils
-
+from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2
 
 
 
@@ -82,8 +82,8 @@ def main(args):
     train_dataset_triplet = LynxDataset(
         dataset_csv=args.train_csv,
         loader="pil",
-        transform=transforms,  # Ensure 'transforms' is defined or imported correctly
-        augmentation=None,
+        transform=transforms_dinov2,  # Ensure 'transforms' is defined or imported correctly
+        augmentation=augments_dinov2,
         probabilities=[0, 0.5, 0.5],        
         mode='triplet',
         load_triplet_path=args.load_path,
@@ -97,9 +97,9 @@ def main(args):
     train_dataset_single = LynxDataset(
         dataset_csv=args.train_csv,
         loader="pil",
-        transform=transforms,
+        transform=transforms_dinov2,
         augmentation=None,
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device=args.device
     )  # Mandatory, since triplet mode produces classic, bounding-box and backgroundless images.
@@ -108,9 +108,9 @@ def main(args):
     val_dataset = LynxDataset(
         dataset_csv=args.val_csv,
         loader="pil",
-        transform=transforms,
+        transform=transforms_dinov2,
         augmentation=None,
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device="auto"
     )  # useful for computing the threshold for detecting new individuals when evaluating the test set
@@ -128,11 +128,11 @@ def main(args):
 
     
     # Dataloader initialization
-    train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, shuffle=True,
+    train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, batch_size=4,shuffle=True,
                                                  collate_fn=collate_triplet)
-    train_dataloader_single = create_dataloader(dataset=train_dataset_single, shuffle=False, collate_fn=collate_single)
-    val_dataloader = create_dataloader(dataset=val_dataset, shuffle=False, collate_fn=collate_single)
-    test_dataloader = create_dataloader(dataset=test_dataset, shuffle=False, collate_fn=collate_single)
+    train_dataloader_single = create_dataloader(dataset=train_dataset_single, batch_size=4, shuffle=False, collate_fn=collate_single)
+    val_dataloader = create_dataloader(dataset=val_dataset, batch_size=4, shuffle=False, collate_fn=collate_single)
+    test_dataloader = create_dataloader(dataset=test_dataset, batch_size=4, shuffle=False, collate_fn=collate_single)
 
 
     # Update dataset lynx_id lists by updating lynx_ids not present in the training set
@@ -156,7 +156,7 @@ def main(args):
     # Triplet Loss
     triplet_loss = nn.TripletMarginLoss(margin=1.0)
     # Optimizer
-    optimizer = optim.Adam(embedding_model.model.parameters(), lr=0.003)
+    optimizer = optim.Adam(embedding_model.model.parameters(), lr=0.01)
     # Scheduler
     T_max = num_epochs  # Here, we set it to the total number of epochs for one cycle
     eta_min = 0.0001  # The minimum learning rate, adjust as needed
