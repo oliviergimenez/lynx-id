@@ -17,14 +17,13 @@ from torchvision import models
 # in your package and the paths are correct.
 from lynx_id.data.dataset import LynxDataset
 from lynx_id.data.collate import collate_triplet, collate_single
-from lynx_id.data.transformations_and_augmentations import transforms
 from lynx_id.eval.eval import EvalMetrics
 from lynx_id.model.clustering import ClusteringModel
 from lynx_id.model.embeddings import EmbeddingModel
 from lynx_id.utils import dinov2_utils
+from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2
 
-
-
+image_size = 224
 
 def create_parser():
     """Create and return the argument parser for the training triplets script."""
@@ -82,8 +81,8 @@ def main(args):
     train_dataset_triplet = LynxDataset(
         dataset_csv=args.train_csv,
         loader="pil",
-        transform=transforms,  # Ensure 'transforms' is defined or imported correctly
-        augmentation=None,
+        transform=transforms_dinov2(image_size=image_size),  # Ensure 'transforms' is defined or imported correctly
+        augmentation=augments_dinov2(image_size=image_size),
         probabilities=[0, 0.5, 0.5],        
         mode='triplet',
         load_triplet_path=args.load_path,
@@ -97,7 +96,7 @@ def main(args):
     train_dataset_single = LynxDataset(
         dataset_csv=args.train_csv,
         loader="pil",
-        transform=transforms,
+        transform=transforms_dinov2(image_size=image_size),
         augmentation=None,
         probabilities=[0, 0, 1],
         mode='single',
@@ -108,7 +107,7 @@ def main(args):
     val_dataset = LynxDataset(
         dataset_csv=args.val_csv,
         loader="pil",
-        transform=transforms,
+        transform=transforms_dinov2(image_size=image_size),
         augmentation=None,
         probabilities=[0, 0, 1],
         mode='single',
@@ -118,7 +117,7 @@ def main(args):
     test_dataset = LynxDataset(
         dataset_csv=args.test_csv,
         loader="pil",
-        transform=transforms,
+        transform=transforms_dinov2(image_size=image_size),
         augmentation=None,
         probabilities=[0, 0, 1],
         mode='single',
