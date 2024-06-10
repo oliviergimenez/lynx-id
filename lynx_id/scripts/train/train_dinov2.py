@@ -99,18 +99,18 @@ def main(args):
         loader="pil",
         transform=transforms,
         augmentation=None,
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device=args.device
     )  # Mandatory, since triplet mode produces classic, bounding-box and backgroundless images.
-    # For evaluation, we want classic images.
+    # For evaluation, we want no_bg images.
 
     val_dataset = LynxDataset(
         dataset_csv=args.val_csv,
         loader="pil",
         transform=transforms,
         augmentation=None,
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device="auto"
     )  # useful for computing the threshold for detecting new individuals when evaluating the test set
@@ -120,13 +120,11 @@ def main(args):
         loader="pil",
         transform=transforms,
         augmentation=None,
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device="auto"
     )
 
-
-    
     # Dataloader initialization
     train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, shuffle=True,
                                                  collate_fn=collate_triplet)
