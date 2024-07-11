@@ -239,7 +239,8 @@ class LynxDataset(Dataset):
                 'y': info["y"],
                 'width': info["width"],
                 'height': info["height"],
-                'filepath': info["filepath"]
+                'filepath': info["filepath"],
+                'country': info["country"]
             }
 
             output_dict = {

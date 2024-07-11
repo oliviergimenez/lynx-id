@@ -35,6 +35,7 @@ def remove_bg():
     csv = pd.read_csv(args.csv_file)
     # All paths to images without backgrounds to add them to the csv
     all_filepath_no_bg = []
+    all_scores_sam = []
 
     # Load the dataset from csv
     lynxDataset = LynxDataset(Path(args.csv_file), probabilities=[1, 0, 0])
@@ -51,16 +52,18 @@ def remove_bg():
                 all_filepath_no_bg.append(filepath)
                 continue
 
-        content = lynxDataset[idx][0]
-        image = content['image']
-        conf = content['conf']
-        x = content['x']
-        y = content['y']
-        width = content['width']
-        height = content['height']
-        filepath = content['filepath']
+        content = lynxDataset[idx]
+        image = content[0]['image']
+        conf = content[0]['conf']
+        x = content[0]['x']
+        y = content[0]['y']
+        width = content[0]['width']
+        height = content[0]['height']
+        filepath = content[0]['filepath']
         filename = os.path.basename(filepath)
-        pbar.set_postfix(image_shape=image.shape, conf=conf, filename=filename)
+        image_number = content[0]['image_number']
+        country = content[0]['country']
+        lynx_id = content[1]['lynx_id']
 
         # The bbox from MegaDetector provides more precise segmentation
         input_box = np.array([x, y, x + width, y + height])
@@ -76,23 +79,29 @@ def remove_bg():
         mask = masks[0]
 
         # Get the segmented image
-        image_masque = image.copy()
-        image_masque[~mask, :] = 0
-        image_masque = image_masque[int(y):int(y) + int(height), int(x):int(x) + int(width), :]
+        image_mask = image.copy()
+        image_mask[~mask, :] = 0
+        image_mask = image_mask[int(y):int(y) + int(height), int(x):int(x) + int(width), :]
 
         # Save the segmented image
-        image_masque_pil = Image.fromarray(image_masque)
-        filepath_no_bg = f'{args.save_img_directory}/no_bg_{filename}'
-        counter = 0
-        while os.path.exists(filepath_no_bg):
-            filepath_no_bg = f'{args.save_img_directory}/no_bg_{counter}_{filename}'
-            counter += 1
+        image_masque_pil = Image.fromarray(image_mask)
+        filepath_no_bg = f'{args.save_img_directory}/{country}/{lynx_id}/no_bg_{image_number}_{filename}'
+        # {image_number} is particularly useful for Germany (several images have the same name but absolute filepath different)
+        if os.path.exists(filepath_no_bg):
+            print(f"Error: {filepath_no_bg}")
+
+        if not os.path.exists(os.path.dirname(filepath_no_bg)):
+            os.makedirs(os.path.dirname(filepath_no_bg))
         image_masque_pil.save(filepath_no_bg)
 
         all_filepath_no_bg.append(filepath_no_bg)
+        all_scores_sam.append(scores[0])
+
+        pbar.set_postfix(image_shape=image.shape, conf=conf, score_sam=scores[0], filename=filename)
 
     csv['filepath_no_bg'] = all_filepath_no_bg
-    csv.to_csv("/gpfsscratch/rech/ads/commun/datasets/extracted/lynx_dataset_full.csv", index=False)
+    csv['score_sam'] = all_scores_sam
+    csv.to_csv(args.csv_file, index=False)
 
     return csv
 

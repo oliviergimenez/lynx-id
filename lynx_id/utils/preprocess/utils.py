@@ -1,9 +1,56 @@
-import pandas as pd
+import os
+import time
+from pathlib import Path
+from PIL import Image
+
 import matplotlib.pyplot as plt
 import numpy as np
-import time
+import pandas as pd
 
 from lynx_id.utils.megadetector.utils import crop_bbox
+
+
+def remove_basename_duplicates(df, keep_first=True):
+    df['basename'] = df['filepath'].apply(os.path.basename)
+    if keep_first:
+        return df.drop_duplicates(subset='basename').drop(columns=['basename'])
+    else:  # remove all samples
+        duplicated_basenames = df['basename'][df['basename'].duplicated(keep=False)]
+        df = df[~df['basename'].isin(duplicated_basenames)]
+        return df.drop(columns=['basename'])
+
+
+def segmentation_inversion(row_df, save_new_img=False):
+    base_img = crop_bbox(row_df)
+    segmented_img = Image.open(row_df['filepath_no_bg'])
+    segmented_img = segmented_img.resize(base_img.size)
+
+    width, height = base_img.size
+
+    inverse_image = Image.new("RGB", (width, height))
+
+    for x in range(width):
+        for y in range(height):
+            pixel_base = base_img.getpixel((x, y))
+            pixel_segmented = segmented_img.getpixel((x, y))
+
+            if pixel_segmented == (0, 0, 0):  # noir opaque
+                inverse_image.putpixel((x, y), pixel_base)
+            else:
+                inverse_image.putpixel((x, y), (0, 0, 0))
+
+    if save_new_img:
+        inverse_image.save(row_df['filepath_no_bg'])
+
+    return inverse_image, base_img
+
+
+def check_filepath(NO_BACKGROUND, COUNTRY, filepath, lynx_id, image_number):
+    filepath_no_bg = NO_BACKGROUND / COUNTRY / lynx_id / Path(f"no_bg_{image_number}_{os.path.basename(filepath)}")
+    if os.path.exists(filepath_no_bg):
+        return filepath_no_bg
+    else:
+        return np.nan
 
 
 def get_no_and_multiple_bbox(bbox_dict):

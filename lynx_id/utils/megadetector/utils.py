@@ -2,7 +2,9 @@ from PIL import Image
 
 
 def crop_bbox(row_bbox, to_be_normalized=False):
-    img = Image.open(row_bbox["file"])
+    key_img = "filepath" if "filepath" in row_bbox.index else "file"
+
+    img = Image.open(row_bbox[key_img])
     x, y, width, height = row_bbox[['x', 'y', 'width', 'height']]
 
     if to_be_normalized:
