@@ -1,5 +1,5 @@
 ---
-title: 'whalestrike: An R package for simulating ship strikes on whales'
+title: 'lynx-id: An R package for simulating ship strikes on whales'
 tags:
   - R
   - oceanography
@@ -7,7 +7,7 @@ tags:
   - ship strikes
   - marine policy
 authors:
-  - name: Dan E. Kelley
+  - name: Olivier Gimenez
     orcid: 0000-0001-7808-5911
     affiliation: 1
 affiliations:
