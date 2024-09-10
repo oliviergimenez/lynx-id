@@ -78,7 +78,7 @@ def plot_occurrence_distribution(df, column_name='lynx_id'):
         occurrence_distribution = value_counts.value_counts().sort_index()
 
         # Plotting
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(30, 6))
         occurrence_distribution.plot(kind='bar')
         plt.title(f'Distribution of {column_name} Occurrences')
         plt.xlabel('Number of Occurrences')
