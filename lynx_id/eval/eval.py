@@ -13,11 +13,13 @@ class EvalMetrics:
         self.top_k = top_k
 
     # Compute some metrics
-    def compute_accuracy(self, lynx_id_predicted: list[LynxImage], verbose=False):
+    def compute_accuracy(self, lynx_id_predicted: list[LynxImage], no_new=False, verbose=False):
         correct_predictions = 0
         total_predictions = 0
 
         for i, (p, r) in enumerate(zip(lynx_id_predicted, self.lynx_id_true)):
+            if no_new and r == "New":
+                continue
             total_predictions += 1
             output = f"Candidate {i} | Prediction: {p.lynx_id} | True label: {r}"
             if p.lynx_id == r:
@@ -26,7 +28,7 @@ class EvalMetrics:
 
             if verbose:
                 print(output)
-
+                
         accuracy = correct_predictions / total_predictions
 
         return accuracy
@@ -47,11 +49,11 @@ class EvalMetrics:
         candidates_acc_k_tensor = self.compute_tensor_matching_candidates()
 
         # CMC@k
-        cmc_k = calc_cmc(candidates_acc_k_tensor, self.top_k)
+        cmc_k = calc_cmc(candidates_acc_k_tensor, n_gts=[1]*candidates_acc_k_tensor.shape[0] ,top_k=self.top_k)
         cmc_k_mean = self.compute_mean_per_top_k(cmc_k)
 
         # mAP@k
-        map_k = calc_map(candidates_acc_k_tensor, n_gt=None, top_k=self.top_k)
+        map_k = calc_map(candidates_acc_k_tensor, n_gts=[1]*candidates_acc_k_tensor.shape[0], top_k=self.top_k)
         map_k_mean = self.compute_mean_per_top_k(map_k)
 
         return cmc_k_mean, map_k_mean
