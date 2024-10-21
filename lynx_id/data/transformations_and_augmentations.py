@@ -1,6 +1,6 @@
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
-
+import cv2
 """
 Probabilities ands weights of applying transformations
 p_XXX corresponds to the probability of applying a transformation or a selection of transformation. Usually they are set to 0.5 to not have all the possible groups of transformations applied.
@@ -43,7 +43,7 @@ w_color_gamma = 1
 w_color_noop = 1
 
 # Geometric changes
-p_geometric = 0.5
+p_geometric = 0.2
 w_geometric_griddistortion = 1
 w_geometric_opticaldistortion = 1
 w_geometric_perspective = 1
@@ -123,18 +123,20 @@ augments = A.Compose([
 # Define the transformations using Albumentations
 def transforms_dinov2(image_size):
     return A.Compose([
+        A.CLAHE(clip_limit=4.0, tile_grid_size=(4, 4), always_apply=False, p=1),
         A.LongestMaxSize(max_size=image_size, p=p_longestmaxsize),  # Resize the longest side to image_size
-        A.PadIfNeeded(min_height=image_size, min_width=image_size, p=p_pad),
+        A.PadIfNeeded(min_height=image_size, min_width=image_size, border_mode=cv2.BORDER_CONSTANT, value=0, p=p_pad),
         # Pad to make the image image_size*image_size
         A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         ToTensorV2(),
+
     ])
 
 
 def augments_dinov2(image_size):
     return A.Compose([
         A.LongestMaxSize(max_size=image_size, p=p_longestmaxsize),  # Resize the longest side to image_size
-        A.PadIfNeeded(min_height=image_size, min_width=image_size, p=p_pad),
+        A.PadIfNeeded(min_height=image_size, min_width=image_size,border_mode=cv2.BORDER_CONSTANT, value=0, p=p_pad),
         # Pad to make the image image_size*image_size
         # Noise block
         A.OneOf([
@@ -159,9 +161,9 @@ def augments_dinov2(image_size):
             A.GridDropout(ratio=0.4, unit_size_min=50, unit_size_max=100, holes_number_x=5, holes_number_y=5, shift_x=0,
                           shift_y=0, random_offset=True, fill_value=0, mask_fill_value=None, always_apply=False,
                           p=w_obs_griddropout),
-            A.RandomFog(fog_coef_lower=0.3, fog_coef_upper=0.7, alpha_coef=0.40, always_apply=False, p=w_obs_fog),
+            A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.1, always_apply=False, p=w_obs_fog),
             A.RandomSunFlare(flare_roi=(0, 0, 1, 1), angle_lower=0, angle_upper=1, num_flare_circles_lower=3,
-                             num_flare_circles_upper=6, src_radius=50, src_color=(255, 255, 255), always_apply=False,
+                             num_flare_circles_upper=6, src_radius=100, src_color=(255, 255, 255), always_apply=False,
                              p=w_obs_sunflare),
             A.CoarseDropout(max_holes=3, max_height=75, max_width=75, min_holes=2, min_height=30, min_width=30,
                             fill_value=0, mask_fill_value=None, always_apply=False, p=w_obs_coarsedropout),
@@ -182,9 +184,7 @@ def augments_dinov2(image_size):
 
         # Geometric Augmentation Block
         A.OneOf([
-            A.GridDistortion(num_steps=5, distort_limit=0.3, interpolation=1, border_mode=4, value=None,
-                             mask_value=None, always_apply=False, p=w_geometric_griddistortion),
-            A.OpticalDistortion(distort_limit=0.3, shift_limit=0.2, interpolation=1, border_mode=4, value=None,
+            A.OpticalDistortion(distort_limit=0.1, shift_limit=0.1, interpolation=1, border_mode=4, value=None,
                                 mask_value=None, always_apply=False, p=w_geometric_opticaldistortion),
             A.Perspective(scale=(0.05, 0.15), keep_size=True, pad_mode=0, pad_val=0, mask_pad_val=0, fit_output=False,
                           interpolation=1, always_apply=False, p=w_geometric_perspective),
