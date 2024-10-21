@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import warnings
 import inspect
+import gc
 
 def set_torch_hub_dir(custom_path=None):
     """

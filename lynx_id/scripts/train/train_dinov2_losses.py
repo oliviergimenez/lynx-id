@@ -22,6 +22,9 @@ from lynx_id.model.clustering import ClusteringModel
 from lynx_id.model.embeddings import EmbeddingModel
 from lynx_id.utils import dinov2_utils
 from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2
+from pytorch_metric_learning import miners, losses
+from itertools import chain
+from sklearn.preprocessing import LabelEncoder
 
 image_size = 700
 
@@ -71,7 +74,7 @@ def main(args):
 
     # Initialize TensorBoard writer
     writer = SummaryWriter(subdir_path)
- 
+    
     # Model embedder from triplet distance computation
     model_embedder_weights = torch.load(args.model_embedder_weights)
     model_embedder = models.resnet50(pretrained=False)
@@ -91,9 +94,6 @@ def main(args):
         device=args.device,
         verbose=args.verbose
     )
-
-    print(len(train_dataset_triplet.dataframe))
-    print(train_dataset_triplet.embeddings.shape)
 
     # train dataset for evaluation (single mode)
     train_dataset_single = LynxDataset(
@@ -153,10 +153,28 @@ def main(args):
     
     # Training setup
     num_epochs = args.epochs  # Example epoch count
-    # Triplet Loss
-    triplet_loss = nn.TripletMarginLoss(margin=1, swap=False)
+
+    loss_mode="triplet_torch"
+    if loss_mode == "torch":
+        # Triplet Loss
+        loss_fct = nn.TripletMarginLoss(margin=1, swap=False)
+        params=model.parameters()
+    elif loss_mode == "triplet_pml":
+        miner = miners.TripletMarginMiner(margin=0.2, type_of_triplets="semihard")
+        loss_fct = losses.TripletMarginLoss(margin=0.05, swap=False)
+        params=model.parameters()
+    elif loss_mode == "arcface_pml":
+        num_classes = train_dataset_triplet.dataframe["lynx_id"].nunique()[0]
+        embedding_size = 128
+        miner = miners.TripletMarginMiner(margin=0.2, type_of_triplets="semihard")
+        loss_fct = losses.ArcFaceLoss(num_classes, embedding_size, margin=28.6, scale=64).to(args.device)
+        params = chain(embedding_model.parameters(), loss_fct.parameters())
+        label_encoder = LabelEncoder()
+        label_encoder.fit(train_dataset_triplet.dataframe["lynx_id"].unique())
+ 
     # Optimizer
-    optimizer = optim.Adam(embedding_model.model.parameters(), lr=0.0001)
+    optimizer = optim.Adam(params, lr=0.0001)
+    
     # Scheduler
     T_max = num_epochs  # Here, we set it to the total number of epochs for one cycle
     eta_min = 0.0001  # The minimum learning rate, adjust as needed
@@ -195,7 +213,11 @@ def main(args):
                     negative_embedding = embedding_model.model(negative['input']['image'])
 
                     # Compute triplet loss
-                    loss = triplet_loss(anchor_embedding, positive_embedding, negative_embedding)
+                    if "arcface" in loss_mode:
+                        
+                        pass #loss = loss_fct()
+                    else:
+                        loss = loss_fct(anchor_embedding, positive_embedding, negative_embedding)
 
                 # Backward pass and optimize
                 scaler.scale(loss).backward()

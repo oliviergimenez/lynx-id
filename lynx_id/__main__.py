@@ -4,7 +4,9 @@ import sys
 import importlib
 from importlib import resources
 import yaml
+from lynx_id.utils import dinov2_utils
 
+torch_hub_dir = dinov2_utils.set_torch_hub_dir()
 
 def resolve_env_variables_in_config(config):
     """Recursively resolve environment variables in the configuration."""
