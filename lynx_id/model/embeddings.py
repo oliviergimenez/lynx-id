@@ -22,7 +22,7 @@ class EmbeddingModel:
             torch_hub_dir = dinov2_utils.set_torch_hub_dir()
             model_name = 'dinov2_vitl14_reg'                
             self.device = device
-            self.model = torch.hub.load('/gpfswork/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device) 
+            self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)
     
     
     def load_model(self):
