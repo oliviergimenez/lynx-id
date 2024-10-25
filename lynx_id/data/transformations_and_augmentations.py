@@ -129,7 +129,15 @@ def transforms_dinov2(image_size):
         # Pad to make the image image_size*image_size
         A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         ToTensorV2(),
+    ])
 
+
+def transforms_megadetector(image_size=384):
+    return A.Compose([
+        A.LongestMaxSize(max_size=image_size),
+        A.PadIfNeeded(min_height=image_size, min_width=image_size),
+        A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+        ToTensorV2(),
     ])
 
 

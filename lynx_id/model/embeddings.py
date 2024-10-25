@@ -10,7 +10,7 @@ from lynx_id.utils import dinov2_utils
 
 
 class EmbeddingModel:
-    def __init__(self, model_path: str, device: str, base_resnet: bool = False, model_type="resnet"):
+    def __init__(self, model_path: str, device: str, base_resnet: bool = False, model_type="resnet", custom_path=None):
         if model_type == "resnet":
             self.model_path = model_path
             self.device = device
@@ -19,7 +19,7 @@ class EmbeddingModel:
             self.model = self.load_model()
 
         elif model_type == "dinov2":
-            torch_hub_dir = dinov2_utils.set_torch_hub_dir()
+            torch_hub_dir = dinov2_utils.set_torch_hub_dir(custom_path=custom_path)
             model_name = 'dinov2_vitl14_reg'                
             self.device = device
             self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)

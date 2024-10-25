@@ -28,7 +28,7 @@ class EvalMetrics:
 
             if verbose:
                 print(output)
-                
+
         accuracy = correct_predictions / total_predictions
 
         return accuracy

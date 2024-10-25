@@ -108,6 +108,7 @@ class ClusteringModel:
                              confidence: float = 0.997):
         candidates_predicted_local = candidates_predicted.copy()
         distances = self.distances[:, 0]
+
         # Threshold
         if threshold is not None and distances is not None:
             candidates_predicted_local = [
