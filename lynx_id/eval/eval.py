@@ -7,7 +7,7 @@ from ..model.clustering import ClusteringModel, LynxImage
 
 class EvalMetrics:
     def __init__(self, candidates_nearest_neighbors: list[list[LynxImage]], lynx_id_true: list[str],
-                 top_k: tuple[int] = (1, 2, 3, 4, 5)):
+                 top_k: tuple = (1, 2, 3, 4, 5)):
         self.candidates_nearest_neighbors = candidates_nearest_neighbors
         self.lynx_id_true = lynx_id_true
         self.top_k = top_k

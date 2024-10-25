@@ -112,7 +112,7 @@ def main(args):
     probabilities = [float(p) for p in args.probabilities]
     transform = transforms_dinov2(image_size=args.image_size) if args.model_architecture == "dinov2" \
         else transforms_megadescriptor(image_size=args.image_size)
-    train_lynxDataset = LynxDataset(
+    train_dataset = LynxDataset(
         dataset_csv=Path(args.train_csv),
         countries=args.countries,
         loader="pil",
@@ -123,7 +123,7 @@ def main(args):
         device=DEVICE
     )
 
-    val_lynxDataset = LynxDataset(
+    val_dataset = LynxDataset(
         dataset_csv=args.val_csv,
         countries=args.countries,
         loader="pil",
@@ -134,7 +134,7 @@ def main(args):
         device=DEVICE
     )  # useful for computing the threshold for detecting new individuals when evaluating the test set
 
-    test_lynxDataset = LynxDataset(
+    test_dataset = LynxDataset(
         dataset_csv=Path(args.test_csv),
         countries=args.countries,
         loader="pil",
@@ -146,19 +146,21 @@ def main(args):
     )
 
     # Dataloader initialization
-    train_dataloader = create_dataloader(train_lynxDataset)
-    val_dataloader = create_dataloader(val_lynxDataset)
-    test_dataloader = create_dataloader(test_lynxDataset)
+    train_dataloader = create_dataloader(train_dataset)
+    val_dataloader = create_dataloader(val_dataset)
+    test_dataloader = create_dataloader(test_dataset)
 
     # Model initialization
     if args.model_architecture == "dinov2":
         embedding_model = EmbeddingModel(
+            model_path=args.model_weights_path,
             device=DEVICE,
             model_type='dinov2',
             custom_path='/lustre/fswork/projects/rech/ads/commun'
         )
     elif args.model_architecture == "megadescriptor":
         embedding_model = EmbeddingModel(
+            model_path=args.model_weights_path,
             device=DEVICE,
             model_type='megadescriptor',
         )
@@ -166,7 +168,6 @@ def main(args):
         raise ValueError("Model not supported")
 
     if args.model_weights_path:
-        embedding_model.model.load_state_dict(torch.load(args.model_weights_path))
         filename = os.path.splitext(os.path.basename(args.model_weights_path))[0]
     else:
         filename = args.model_architecture
@@ -196,14 +197,14 @@ def main(args):
             save_file(data, BASE_PATH / f"{filename}.safetensors")
 
     # update lynx_id of val and test sets for images whose lynx_id does not appear in the training set
-    val_lynx_id = val_lynxDataset.compute_new_lynx_id(train_lynxDataset)
-    test_lynx_id = test_lynxDataset.compute_new_lynx_id(train_lynxDataset)
+    val_lynx_id = val_dataset.compute_new_lynx_id(train_dataset)
+    test_lynx_id = test_dataset.compute_new_lynx_id(train_dataset)
     # Check that we have new individuals
     assert "New" in test_lynx_id
     assert "New" in val_lynx_id
 
     # Initialization Nearest Neighbors
-    train_lynx_infos = train_lynxDataset.dataframe[['lynx_id', 'date', 'location', 'filepath']].copy()
+    train_lynx_infos = train_dataset.dataframe[['lynx_id', 'date', 'location', 'filepath']].copy()
     top_k = (1, 2, 3, 4, 5)
     clustering_model = ClusteringModel(
         embeddings_knowledge=train_embeddings,

@@ -13,8 +13,9 @@ from lynx_id.utils import dinov2_utils
 class EmbeddingModel:
     def __init__(self, device: str, model_path: str = None, base_resnet: bool = False, model_type="resnet", custom_path=None):
         self.device = device
+        self.model_path = model_path
+
         if model_type == "resnet":
-            self.model_path = model_path
             self.base_resnet = base_resnet
     
             self.model = self.load_model()
@@ -32,6 +33,9 @@ class EmbeddingModel:
                 num_classes=0,
                 pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
             ).to("cuda")
+
+        if self.model_path and model_type in ["megadescriptor", "dinov2"]:
+            self.model.load_state_dict(torch.load(self.model_path))
     
     
     def load_model(self):
