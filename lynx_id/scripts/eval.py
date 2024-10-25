@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from lynx_id.data.collate import collate_single
 from lynx_id.data.dataset import LynxDataset
-from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2, transforms_megadetector
+from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2, transforms_megadescriptor
 from lynx_id.eval.eval import EvalMetrics
 from lynx_id.model.clustering import ClusteringModel
 from lynx_id.model.embeddings import EmbeddingModel
@@ -25,7 +25,7 @@ image_size = 700
 def create_parser():
     """Create and return the argument parser for the training triplets script."""
     parser = argparse.ArgumentParser(description='Evaluate a model on lynx dataset.')
-    parser.add_argument('--model-architecture', type=str, choices=["dinov2", "megadetector"], default="dinov2",
+    parser.add_argument('--model-architecture', type=str, choices=["dinov2", "megadescriptor"], default="dinov2",
                         help="Specify the foundation model used")
     parser.add_argument('--model-weights-path', type=str, help="Path to trained model weights")
     parser.add_argument('--probabilities', metavar='N', type=str, nargs='+', default=[0, 0.5, 0.5],
@@ -111,7 +111,7 @@ def main(args):
     # Load train, val, test datasets
     probabilities = [float(p) for p in args.probabilities]
     transform = transforms_dinov2(image_size=args.image_size) if args.model_architecture == "dinov2" \
-        else transforms_megadetector(image_size=args.image_size)
+        else transforms_megadescriptor(image_size=args.image_size)
     train_lynxDataset = LynxDataset(
         dataset_csv=Path(args.train_csv),
         countries=args.countries,
@@ -153,22 +153,26 @@ def main(args):
     # Model initialization
     if args.model_architecture == "dinov2":
         embedding_model = EmbeddingModel(
-            model_path='useless',
             device=DEVICE,
-            base_resnet=True,
-            model_type="dinov2",
+            model_type='dinov2',
             custom_path='/lustre/fswork/projects/rech/ads/commun'
         )
-        if args.model_weights_path:
-            embedding_model.model.load_state_dict(torch.load(args.model_weights_path))
-            filename = os.path.splitext(os.path.basename(args.model_weights_path))[0]
-        else:
-            filename = args.model_architecture
-        embedding_model.model.eval()
+    elif args.model_architecture == "megadescriptor":
+        embedding_model = EmbeddingModel(
+            device=DEVICE,
+            model_type='megadescriptor',
+        )
     else:
         raise ValueError("Model not supported")
 
+    if args.model_weights_path:
+        embedding_model.model.load_state_dict(torch.load(args.model_weights_path))
+        filename = os.path.splitext(os.path.basename(args.model_weights_path))[0]
+    else:
+        filename = args.model_architecture
     print_verbose(f"{filename=}")
+
+    embedding_model.model.eval()
 
     BASE_PATH = Path("/lustre/fswork/projects/rech/ads/commun/embeddings_evaluation")
     if os.path.exists(BASE_PATH / f"{filename}.safetensors") and not args.force_compute_embeddings:  # load embeddings

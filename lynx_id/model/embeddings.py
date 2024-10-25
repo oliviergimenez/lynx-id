@@ -1,3 +1,5 @@
+import pandas as pd
+import timm
 import torch
 import torch.nn as nn
 from safetensors.torch import save_file
@@ -5,15 +7,14 @@ from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
 
-import pandas as pd
 from lynx_id.utils import dinov2_utils
 
 
 class EmbeddingModel:
-    def __init__(self, model_path: str, device: str, base_resnet: bool = False, model_type="resnet", custom_path=None):
+    def __init__(self, device: str, model_path: str = None, base_resnet: bool = False, model_type="resnet", custom_path=None):
+        self.device = device
         if model_type == "resnet":
             self.model_path = model_path
-            self.device = device
             self.base_resnet = base_resnet
     
             self.model = self.load_model()
@@ -21,8 +22,16 @@ class EmbeddingModel:
         elif model_type == "dinov2":
             torch_hub_dir = dinov2_utils.set_torch_hub_dir(custom_path=custom_path)
             model_name = 'dinov2_vitl14_reg'                
-            self.device = device
             self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)
+
+        elif model_type == "megadescriptor":
+            self.model = timm.create_model(
+                "swin_large_patch4_window12_384",
+                pretrained=True,
+                # features_only=True,
+                num_classes=0,
+                pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
+            ).to("cuda")
     
     
     def load_model(self):

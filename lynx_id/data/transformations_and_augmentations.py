@@ -132,7 +132,7 @@ def transforms_dinov2(image_size):
     ])
 
 
-def transforms_megadetector(image_size=384):
+def transforms_megadescriptor(image_size=384):
     return A.Compose([
         A.LongestMaxSize(max_size=image_size),
         A.PadIfNeeded(min_height=image_size, min_width=image_size),
