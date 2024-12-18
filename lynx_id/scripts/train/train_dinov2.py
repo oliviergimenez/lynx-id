@@ -6,6 +6,7 @@ import argparse
 from tqdm import tqdm
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -23,7 +24,7 @@ from lynx_id.model.embeddings import EmbeddingModel
 from lynx_id.utils import dinov2_utils
 from lynx_id.data.transformations_and_augmentations import transforms_dinov2, augments_dinov2
 
-image_size = 700
+image_size = 384
 
 def create_parser():
     """Create and return the argument parser for the training triplets script."""
@@ -40,22 +41,61 @@ def create_parser():
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
     parser.add_argument('--epochs', type=int, default=10, help="Number of epochs")
     parser.add_argument('--debug', action='store_true', help='if enabled, iterates only on 10 batches')
+    parser.add_argument('--model_type', type=str, default="dinov2", help='dinov2 or megadescriptor')
+    parser.add_argument('--eval_before_training', action='store_true', help='Perform evaluation before starting training')
     return parser
 
+# Define a distance function equivalent to sklearn's cosine distance
+def cosine_distance_sklearn_compatible(x1, x2):
+    return 1 - F.cosine_similarity(x1, x2)
 
-def create_dataloader(dataset, shuffle, collate_fn, batch_size=8, num_workers=4, pin_memory=True,
+def create_dataloader(dataset, shuffle, collate_fn, batch_size=8, num_workers=8, pin_memory=True,
                       persistent_workers=True):
     return DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
         collate_fn=collate_fn,
-        prefetch_factor=8,
+        prefetch_factor=10,
         num_workers=num_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers
     )
 
+def evaluate_embeddings(embedding_model, train_dataloader_single, val_dataloader, train_dataset_single, val_lynx_id, top_k):
+    train_embeddings = embedding_model.compute_embeddings(
+        train_dataloader_single
+    )
+    val_embeddings = embedding_model.compute_embeddings(
+        val_dataloader
+    )
+    train_embeddings = train_embeddings.to("cpu")
+    val_embeddings = val_embeddings.to("cpu")
+    print(f"TRAIN | Number of images: {train_embeddings.shape[0]} | Embedding shape: {train_embeddings.shape[1]}")
+    print(f"VAL   | Number of images: {val_embeddings.shape[0]}   | Embedding shape: {val_embeddings.shape[1]}")
+
+    # Initialize KNN
+    train_lynx_infos = train_dataset_single.dataframe[['lynx_id', 'date', 'location', 'filepath']].copy()
+    clustering_model = ClusteringModel(
+        embeddings_knowledge=train_embeddings,
+        lynx_infos_knowledge=train_lynx_infos,
+        n_neighbors=5,
+        algorithm="brute",
+        metric="cosine"
+    )
+
+    clustering_model.clustering(val_embeddings)
+
+    val_eval_metrics = EvalMetrics(
+        candidates_nearest_neighbors=clustering_model.candidates_nearest_neighbors,
+        lynx_id_true=val_lynx_id,
+        top_k=top_k
+    )
+
+    accuracy_no_threshold = val_eval_metrics.compute_accuracy(lynx_id_predicted=clustering_model.one_knn())
+    print(f"VAL | Accuracy 1-KNN: {accuracy_no_threshold}")
+
+    return accuracy_no_threshold
 
 def main(args):
     print("Running train_triplets with arguments:", args)
@@ -76,6 +116,14 @@ def main(args):
     model_embedder_weights = torch.load(args.model_embedder_weights)
     model_embedder = models.resnet50(pretrained=False)
     model_embedder.load_state_dict(model_embedder_weights)
+
+    if args.model_type=="dinov2":
+        image_size = 700 
+    elif args.model_type=="megadescriptor":
+        image_size = 384
+    elif args.model_type=="resnet":
+        image_size = 224
+
     
     # Dataset initialization
     train_dataset_triplet = LynxDataset(
@@ -92,9 +140,7 @@ def main(args):
         verbose=args.verbose
     )
 
-    print(len(train_dataset_triplet.dataframe))
-    print(train_dataset_triplet.embeddings.shape)
-
+    
     # train dataset for evaluation (single mode)
     train_dataset_single = LynxDataset(
         dataset_csv=args.train_csv,
@@ -147,19 +193,27 @@ def main(args):
         model_path=args.model_embedder_weights,
         device=args.device,
         base_resnet=True,
-        model_type="dinov2"
+        model_type=args.model_type
     )
-    
-    
+
+    if args.eval_before_training:
+        print("Performing evaluation before training...")
+        evaluate_embeddings(embedding_model, train_dataloader_single, val_dataloader, train_dataset_single, val_lynx_id, top_k)
+
     # Training setup
     num_epochs = args.epochs  # Example epoch count
+    
     # Triplet Loss
-    triplet_loss = nn.TripletMarginLoss(margin=1, swap=False)
+    #triplet_loss = nn.TripletMarginLoss(margin=1, swap=False)
+    
+    # Triplet Loss with Cosine Distance (compatible with sklearn)
+    triplet_loss = nn.TripletMarginWithDistanceLoss(distance_function=cosine_distance_sklearn_compatible, margin=0.1)
+
     # Optimizer
-    optimizer = optim.Adam(embedding_model.model.parameters(), lr=0.0001)
+    optimizer = optim.Adam(embedding_model.model.parameters(), lr=0.00005)
     # Scheduler
     T_max = num_epochs  # Here, we set it to the total number of epochs for one cycle
-    eta_min = 0.0001  # The minimum learning rate, adjust as needed
+    eta_min = 0.00001  # The minimum learning rate, adjust as needed
     scheduler = CosineAnnealingLR(optimizer, T_max=T_max, eta_min=eta_min)
 
     # Training loop
@@ -175,13 +229,14 @@ def main(args):
         with tqdm(enumerate(train_dataloader_triplet), miniters=1, total=len(train_dataloader_triplet),
                   desc=f"Epoch {epoch + 1}/{num_epochs}") as dataloader_tqdm:
             for i, batch in dataloader_tqdm:
+                if args.debug:
+                    break
                 optimizer.zero_grad()
 
                 # Assign dictionaries to variables
                 anchor = batch['anchor']
                 positive = batch['positive']
                 negative = batch['negative']
-
                 # Move images to the correct device directly
                 anchor['input']['image'] = anchor['input']['image'].to(args.device).float()
                 positive['input']['image'] = positive['input']['image'].to(args.device).float()
@@ -209,8 +264,7 @@ def main(args):
                 writer.add_scalar('Loss/Batch', loss.item(), epoch * len(train_dataloader_triplet) + i)
                 epoch_loss += loss.item()
 
-                if i >= 10 and args.debug:
-                    break
+
 
         # Average loss for the epoch
         epoch_loss /= len(train_dataloader_triplet)
@@ -227,46 +281,20 @@ def main(args):
             best_loss = epoch_loss
             best_model_path = os.path.join(subdir_path, f'model_best_{best_loss:.3f}.pth')
             torch.save(embedding_model.model.state_dict(), best_model_path)
-        '''
+        
         # Evaluation on validation set
-        # Need to calculate embeddings for train and validation set
-        train_embeddings = embedding_model.compute_embeddings(
-            train_dataloader_single
-        )
-        val_embeddings = embedding_model.compute_embeddings(
-            val_dataloader
-        )
-        train_embeddings = train_embeddings.to("cpu")
-        val_embeddings = val_embeddings.to("cpu")
-        print(f"TRAIN | Number of images: {train_embeddings.shape[0]} | Embedding shape: {train_embeddings.shape[1]}")
-        print(f"VAL   | Number of images: {val_embeddings.shape[0]}   | Embedding shape: {val_embeddings.shape[1]}")
+        evaluate_embeddings(embedding_model, train_dataloader_single, val_dataloader, train_dataset_single, val_lynx_id, top_k)
 
-        # Initialize KNN
-        clustering_model = ClusteringModel(
-            embeddings_knowledge=train_embeddings,
-            lynx_ids_knowledge=train_dataset_single.dataframe['lynx_id'].to_list(),
-            n_neighbors=5,
-            algorithm="brute",
-            metric="minkowski"
-        )
-        # KNN on validation set
-        clustering_model.clustering(val_embeddings)
-
-        val_eval_metrics = EvalMetrics(
-            candidates_nearest_neighbors=clustering_model.candidates_nearest_neighbors,
-            lynx_id_true=val_lynx_id,
-            top_k=top_k
-        )
-
-        accuracy_no_threshold = val_eval_metrics.compute_accuracy(lynx_id_predicted=clustering_model.one_knn())
-        writer.add_scalar("val_accuracy_1_knn_no_threshold", accuracy_no_threshold, epoch)
-        print(f"VAL | Accuracy 1-KNN: {accuracy_no_threshold}")
-        '''
     print(f"Best model saved at: {best_model_path}")
     print(f"Last model saved at: {last_model_path}")
     print("Training completed. Now, start of evaluation on the model of the last epoch.")
 
-    return
+
+    test_eval_metrics = EvalMetrics(
+        candidates_nearest_neighbors=clustering_model.candidates_nearest_neighbors,
+        lynx_id_true=test_lynx_id,
+        top_k=top_k
+    )
     
     # From the results on the validation set at the last epoch, we compute the ideal threshold on these data.
     # This will be used to detect new individuals on the test set.
@@ -287,20 +315,16 @@ def main(args):
     print(f"TEST  | Number of images: {test_embeddings.shape[0]}  | Embedding shape: {test_embeddings.shape[1]}")
 
     # Initialize KNN
+    train_lynx_infos = train_dataset_single.dataframe[['lynx_id', 'date', 'location', 'filepath']].copy()
     clustering_model = ClusteringModel(
         embeddings_knowledge=train_embeddings,
-        lynx_ids_knowledge=train_dataset_single.dataframe['lynx_id'].to_list(),
+        lynx_infos_knowledge=train_lynx_infos,
         n_neighbors=5,
         algorithm="brute",
         metric="minkowski"
     )
     clustering_model.clustering(test_embeddings)
 
-    test_eval_metrics = EvalMetrics(
-        candidates_nearest_neighbors=clustering_model.candidates_nearest_neighbors,
-        lynx_id_true=test_lynx_id,
-        top_k=top_k
-    )
 
     accuracy_no_threshold = test_eval_metrics.compute_accuracy(lynx_id_predicted=clustering_model.one_knn())
     print(f"TEST | Accuracy 1-KNN: {accuracy_no_threshold}")
@@ -331,6 +355,7 @@ def main(args):
     print(f"{cmc_k_mean=}")
     print(f"{map_k_mean=}")
 
+
     def format_cmc_map(data, prefix):
         data = {prefix + "@" + str(key): value for key, value in data.items()}
         return data
@@ -356,6 +381,8 @@ def main(args):
 
     # Close the TensorBoard writer
     writer.close()
+
+    return
 
 
 if __name__ == '__main__':

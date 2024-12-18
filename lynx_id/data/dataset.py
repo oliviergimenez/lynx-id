@@ -466,7 +466,7 @@ class LynxDataset(Dataset):
                 lynx_id[i] = "New"
                 count_new += 1
 
-        print(f"{count_new=}")
+        #print(f"{count_new=}")
 
         self.new_lynx_id = lynx_id
         return self.new_lynx_id

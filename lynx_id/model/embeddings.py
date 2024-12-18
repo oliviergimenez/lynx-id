@@ -13,19 +13,22 @@ from lynx_id.utils import dinov2_utils
 class EmbeddingModel:
     def __init__(self, device: str, model_path: str = None, base_resnet: bool = False, model_type="resnet", custom_path=None):
         self.device = device
+        self.model_type=model_type
         self.model_path = model_path
 
-        if model_type == "resnet":
-            self.base_resnet = base_resnet
-    
+        if self.model_type == "resnet":
+            self.base_resnet = base_resnet 
             self.model = self.load_model()
 
-        elif model_type == "dinov2":
+        elif self.model_type == "dinov2":
             torch_hub_dir = dinov2_utils.set_torch_hub_dir(custom_path=custom_path)
             model_name = 'dinov2_vitl14_reg'                
             self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)
+            #if self.model_path :
+            #    self.model.load_state_dict(torch.load(self.model_path))
+    
 
-        elif model_type == "megadescriptor":
+        elif self.model_type == "megadescriptor":
             self.model = timm.create_model(
                 "swin_large_patch4_window12_384",
                 pretrained=True,
@@ -33,12 +36,15 @@ class EmbeddingModel:
                 num_classes=0,
                 pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
             ).to("cuda")
+            
+            #if self.model_path:
+            #    print(torch.load(self.model_path).keys())
+            #    self.model.load_state_dict(torch.load(self.model_path))
 
-        if self.model_path and model_type in ["megadescriptor", "dinov2"]:
-            self.model.load_state_dict(torch.load(self.model_path))
-    
     
     def load_model(self):
+        print("got here with model path")
+        print(self.model_path)
         model_weights = torch.load(self.model_path,  map_location=self.device)
         model = models.resnet50(weights=None)
         if not self.base_resnet:
