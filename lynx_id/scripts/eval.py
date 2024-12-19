@@ -211,7 +211,7 @@ def main(args):
         lynx_infos_knowledge=train_lynx_infos,
         n_neighbors=5,
         algorithm="brute",
-        metric="minkowski",
+        metric="cosine",
     )
 
     # Validation set

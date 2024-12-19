@@ -10,7 +10,7 @@ from safetensors.torch import save_file
 from torch.utils.data import DataLoader
 
 from lynx_id.data.collate import collate_single
-from lynx_id.data.transformations_and_augmentations import transforms
+from lynx_id.data.transformations_and_augmentations import transforms_dinov2, transforms_megadescriptor, augments_dinov2
 from lynx_id.model.clustering import ClusteringModel, location_lynx_image
 from lynx_id.model.embeddings import EmbeddingModel
 from ..data.dataset import LynxDataset
@@ -23,7 +23,14 @@ def generate_random_lynx_id(length):
 def create_parser():
     """Create and return the argument parser for the inference script."""
     parser = argparse.ArgumentParser(description="Inference script.")
-    parser.add_argument('--model-path', type=str, required=True, help='Path to model weights.')
+    parser.add_argument('--model-architecture',
+                        type=str,
+                        required=True,
+                        choices=['resnet', 'dinov2', 'megadescriptor'],
+                        default='megadescriptor',
+                        help='Model architecture of the foundation model.')
+    parser.add_argument('--model-weights-path', type=str, required=True, help='Path to trained model weights.')
+    parser.add_argument('--image-size', type=int, default=700, help="Image size")
     parser.add_argument('--input-data',
                         type=str,
                         required=True,
@@ -80,13 +87,16 @@ def main(args=None):
         raise RuntimeError(f"No image files found in the directory '{args.input_data}'.")
 
     # dataset initialization
+    transform = transforms_dinov2(image_size=args.image_size) if args.model_architecture in ["dinov2", "resnet"] \
+        else transforms_megadescriptor(image_size=args.image_size)
     dataset = LynxDataset(
         folder_path_images=args.input_data,
         loader='pil',
-        transform=transforms,
+        transform=transform,
+        augmentation=augments_dinov2(image_size=args.image_size),
         probabilities=[1, 0, 0],
         mode='single',
-        device='auto'
+        device=DEVICE
     )
 
     dataloader = DataLoader(
@@ -99,7 +109,8 @@ def main(args=None):
 
     # Load embedding model
     embedding_model = EmbeddingModel(
-        model_path=args.model_path,
+        model_type=args.model_architecture,
+        model_path=args.model_weights_path,
         device=DEVICE
     )
 
@@ -112,7 +123,7 @@ def main(args=None):
         lynx_infos_knowledge=args.knowledge_informations_path,
         n_neighbors=5,
         algorithm="brute",
-        metric="minkowski",
+        metric="cosine",
     )
     # Clustering on computed embeddings
     clustering_model.clustering(embeddings.cpu())

@@ -26,8 +26,8 @@ def create_parser():
     """Create and return the argument parser for the training triplets script."""
     parser = argparse.ArgumentParser(description='Train a model on lynx dataset using triplet loss.')
     parser.add_argument('--train_csv', type=str, required=True, help='Path to CSV file for training dataset')
-    parser.add_argument('--val_csv', type=str, required=True, help='Path to CSV file for validation dataset')
-    parser.add_argument('--test_csv', type=str, required=True, help='Path to CSV file for test dataset')
+    parser.add_argument('--val_csv', type=str, required=False, help='Path to CSV file for validation dataset')
+    parser.add_argument('--test_csv', type=str, required=False, help='Path to CSV file for test dataset')
     parser.add_argument('--model_weights', type=str, required=True, help='Path to the pretrained model')
     parser.add_argument('--save_path', type=str, required=True, help='Path to save precomputed triplets')
     parser.add_argument('--load_path', type=str, required=True, help='Path to load precomputed triplets')
@@ -79,6 +79,7 @@ def main(args):
         verbose=args.verbose
     )
 
+    """
     # train dataset for evaluation (single mode)
     train_dataset_single = LynxDataset(
         dataset_csv=args.train_csv,
@@ -110,6 +111,7 @@ def main(args):
         mode='single',
         device="auto"
     )
+    """
 
     # Dataloader initialization
     train_dataloader_triplet = create_dataloader(dataset=train_dataset_triplet, shuffle=True,
