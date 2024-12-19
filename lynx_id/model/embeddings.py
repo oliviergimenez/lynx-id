@@ -24,9 +24,6 @@ class EmbeddingModel:
             torch_hub_dir = dinov2_utils.set_torch_hub_dir(custom_path=custom_path)
             model_name = 'dinov2_vitl14_reg'                
             self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)
-            #if self.model_path :
-            #    self.model.load_state_dict(torch.load(self.model_path))
-    
 
         elif self.model_type == "megadescriptor":
             self.model = timm.create_model(
@@ -35,16 +32,12 @@ class EmbeddingModel:
                 # features_only=True,
                 num_classes=0,
                 pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
-            ).to("cuda")
-            
-            #if self.model_path:
-            #    print(torch.load(self.model_path).keys())
-            #    self.model.load_state_dict(torch.load(self.model_path))
+            ).to(self.device)
 
+        if self.model_path and model_type in ["megadescriptor", "dinov2"]:
+            self.model.load_state_dict(torch.load(self.model_path))
     
     def load_model(self):
-        print("got here with model path")
-        print(self.model_path)
         model_weights = torch.load(self.model_path,  map_location=self.device)
         model = models.resnet50(weights=None)
         if not self.base_resnet:
