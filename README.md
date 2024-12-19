@@ -12,4 +12,4 @@
 `pip install https://github.com/oliviergimenez/lynx-id.git`
 
 ## User guide
-An example of use is available [here](lynx_id/tests/notebooks/dataset_inference.ipynb)
+An example of use is available [here](tests/notebooks/dataset_inference.ipynb)
