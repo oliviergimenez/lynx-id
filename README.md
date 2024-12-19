@@ -1,18 +1,15 @@
-# DP-SCR_Identify-and-estimate-density-lynx-population
+# Lynx-ID
+<p align="center">
+    <img width="250" height="250" src="lynx_id/resources/images/lynx_id-logo.png" alt="Lynx-ID logo">
+</p>
 
-## Running code outside the `lynx_id` module
+**Lynx-ID aims to (re)identify individual lynx in order to estimate population numbers and evaluate the species' conservation status.**
 
-To run code outside `lynx_id` folder that uses this module (for example, files in the `test` folder), you need to **install the project locally in editable mode**.  
-On Jean-Zay, first load the module like that :
-- `module load pytorch-gpu/py3/2.2.0`
-Then run a command similar to this one at the root of the project: 
-- `pip install --editable . --user --no-cache-dir`  
+## Documentation
+<a href="https://lynx-id.readthedocs.io/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/lynx-id/badge/?version=latest"></a>
 
-You can then run code that does `from lynx_id. ... import ...`.
+## Install
+`pip install https://github.com/oliviergimenez/lynx-id.git`
 
-
-
-## Preprocess
-
-To prepare the data, perform the following instructions in the following order:
-- Running the notebook `./lynx_id/preprocess/preprocess_dataset.ipynb` with a V100 GPU
+## User guide
+An example of use is available [here](lynx_id/tests/notebooks/dataset_inference.ipynb)
