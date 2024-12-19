@@ -1,6 +1,6 @@
 # Lynx-ID
 <p align="center">
-    <img width="250" height="250" src="lynx_id/resources/images/lynx_id-logo.png" alt="Lynx-ID logo">
+    <img width="250" height="250" src="https://raw.githubusercontent.com/oliviergimenez/lynx-id/refs/heads/main/lynx_id/resources/images/lynx_id-logo.png" alt="Lynx-ID logo">
 </p>
 
 **Lynx-ID aims to (re)identify individual lynx in order to estimate population numbers and evaluate the species' conservation status.**
