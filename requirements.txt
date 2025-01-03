@@ -1,4 +1,14 @@
 idr_torch>=2.0.0
 torch
 tqdm
-dinov2 @ git+https://github.com/thomasbtnfr/dinov2.git
+megadetector==5.0.21  # python<3.12
+safetensors
+git+https://github.com/facebookresearch/segment-anything.git
+albumentations
+timm
+open-metric-learning
+torchvision
+pandas
+pillow
+scikit-learn
+typing

@@ -26,16 +26,20 @@ class EmbeddingModel:
             self.model = torch.hub.load('/lustre/fswork/projects/rech/ads/commun/models/facebookresearch_dinov2_main/', model_name, source='local').to(device)
 
         elif self.model_type == "megadescriptor":
-            self.model = timm.create_model(
-                "swin_large_patch4_window12_384",
-                pretrained=True,
-                # features_only=True,
-                num_classes=0,
-                pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
-            ).to(self.device)
+            try:
+                self.model = timm.create_model(
+                    "swin_large_patch4_window12_384",
+                    pretrained=True,
+                    # features_only=True,
+                    num_classes=0,
+                    pretrained_cfg_overlay={'file': '/lustre/fswork/projects/rech/ads/commun/models/MegaDescriptor-L-384/pytorch_model.bin'}
+                ).to(self.device)
+            except Exception as e:
+                print(f"Not using Jean Zay: {e}")
+                self.model = timm.create_model("swin_large_patch4_window12_384", pretrained=True, num_classes=0).to(self.device)
 
         if self.model_path and model_type in ["megadescriptor", "dinov2"]:
-            self.model.load_state_dict(torch.load(self.model_path))
+            self.model.load_state_dict(torch.load(self.model_path, map_location=self.device), strict=False)
     
     def load_model(self):
         model_weights = torch.load(self.model_path,  map_location=self.device)

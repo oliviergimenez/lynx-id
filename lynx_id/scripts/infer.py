@@ -91,10 +91,14 @@ def create_parser():
                              'the main process. (default: 0)')
     parser.add_argument('--megadetector-model-path',
                         type=str,
-                        default='/lustre/fswork/projects/rech/ads/commun/megadetector/md_v5a.0.0.pt')
+                        default='MDV5A',
+                        help='Path to the megadetector model. By default, it automatically downloads MDV5A.')
     parser.add_argument('--sam-model-path',
                         type=str,
-                        default="/lustre/fswork/projects/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth")
+                        default="/lustre/fswork/projects/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth",
+                        help='Path to segment anything model. By default, it does not automatically download model '
+                             'weights! You have to download them yourself. '
+                             '3 versions are available: vit_h, vit_l and vit_b (sorted in descending order of size).')
     parser.add_argument('--skip-megadetector-sam',
                         action='store_true',
                         help='If enabled, avoids images passing through megadetector and SAM.')
@@ -146,7 +150,8 @@ def main(args=None):
         df_bbox = absolute_coordinates_bbox(df_bbox)
 
         print(f"{color.BOLD}SAM preprocessing{color.END}")
-        model_type = "vit_h"
+        model_types = {"vit_h", "vit_b", "vit_l"}
+        model_type = next((m_t for m_t in model_types if m_t in args.sam_model_path), None)
         sam = sam_model_registry[model_type](
             checkpoint=args.sam_model_path) \
             .to(device="cuda")
