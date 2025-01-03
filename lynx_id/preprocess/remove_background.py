@@ -23,7 +23,7 @@ def parse_arguments():
 
 def load_sam_model():
     model_type = "vit_h"
-    sam = sam_model_registry[model_type](checkpoint="/gpfswork/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth") \
+    sam = sam_model_registry[model_type](checkpoint="/lustre/fswork/projects/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth") \
         .to(device="cuda")
     return SamPredictor(sam)
 

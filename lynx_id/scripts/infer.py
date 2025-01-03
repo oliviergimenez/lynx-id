@@ -3,18 +3,43 @@ import argparse
 import os
 import random
 import string
+import time
+from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
+from PIL import Image
+from megadetector.detection.run_detector_batch import load_and_run_detector_batch
 from safetensors.torch import save_file
+from segment_anything import SamPredictor, sam_model_registry
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from lynx_id.data.collate import collate_single
-from lynx_id.data.transformations_and_augmentations import transforms_dinov2, transforms_megadescriptor, augments_dinov2
+from lynx_id.data.transformations_and_augmentations import transforms_dinov2, transforms_megadescriptor
 from lynx_id.model.clustering import ClusteringModel, location_lynx_image
 from lynx_id.model.embeddings import EmbeddingModel
+from lynx_id.utils.preprocess.utils import flatten_bbox, absolute_coordinates_bbox
 from ..data.dataset import LynxDataset
 
+os.environ['WANDB_DISABLED'] = 'true'  # for megadetector
+
+import logging
+logging.getLogger("urllib3").setLevel(logging.ERROR)  # hide network error message due to wandb for megadetector
+
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
 
 def generate_random_lynx_id(length):
     characters = string.ascii_letters + string.digits
@@ -62,29 +87,105 @@ def create_parser():
     parser.add_argument('--num-workers',
                         type=int,
                         default=0,
-                        help='how many subprocesses to use for data loading. 0 means that the data will be loaded in '
+                        help='How many subprocesses to use for data loading. 0 means that the data will be loaded in '
                              'the main process. (default: 0)')
+    parser.add_argument('--megadetector-model-path',
+                        type=str,
+                        default='/lustre/fswork/projects/rech/ads/commun/megadetector/md_v5a.0.0.pt')
+    parser.add_argument('--sam-model-path',
+                        type=str,
+                        default="/lustre/fswork/projects/rech/ads/commun/segment_anything/sam_vit_h_4b8939.pth")
+    parser.add_argument('--skip-megadetector-sam',
+                        action='store_true',
+                        help='If enabled, avoids images passing through megadetector and SAM.')
     return parser
 
 
 def main(args=None):
     # Example usage of the parsed arguments
-    print(f"This is the infer script.")
+    print(f"{color.BOLD}{'#'*20} This is the infer script. {'#'*20}{color.END}")
+    start_time_global = time.time()
 
     # use GPU if available
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"{DEVICE=}")
+    print(f"{color.BOLD}{DEVICE=}{color.END}")
 
     # check presence image or csv
-    files = os.listdir(args.input_data)
-    extensions = ['.jpg', '.jpeg', '.png', '.csv']
     image_csv_found = False
-    for file in files:
-        if os.path.isfile(os.path.join(args.input_data, file)) and any(file.lower().endswith(ext) for ext in extensions):
-            image_csv_found = True
-            break
+    image_file_names = []
+    # check if the input is a CSV file
+    if os.path.splitext(args.input_data)[1] == '.csv':
+        image_csv_found = True
+        df = pd.read_csv(args.input_data)
+        image_file_names = df['filepath'].tolist()
+    # check if the input is a directory containing images
+    if os.path.isdir(args.input_data):
+        extensions = {'.jpg', '.jpeg', '.png'}
+        for file in os.listdir(args.input_data):
+            if os.path.isfile(os.path.join(args.input_data, file)) and any(file.lower().endswith(ext) for ext in extensions):
+                image_csv_found = True
+                image_file_names.append(os.path.join(args.input_data, file))
+
+    # raise an error if no images are found
     if not image_csv_found:
-        raise RuntimeError(f"No image files found in the directory '{args.input_data}'.")
+         raise RuntimeError(f"No image files found in the directory '{args.input_data}'.")
+
+    # apply megadetector + SAM
+    if not args.skip_megadetector_sam:
+        print(f"{color.BOLD}Preprocessing images...{color.END}")
+        start_time_preprocessing = time.time()
+        print(f"{color.BOLD}Megadetector preprocessing{color.END}")
+        results = load_and_run_detector_batch(
+            model_file=args.megadetector_model_path,
+            image_file_names=image_file_names,
+            quiet=True,
+            include_image_size=True,
+            confidence_threshold=0.5,
+        )
+        df_bbox = flatten_bbox({'images': results}, add_image_without_bbox=False, verbose=False)
+        df_bbox = absolute_coordinates_bbox(df_bbox)
+
+        print(f"{color.BOLD}SAM preprocessing{color.END}")
+        model_type = "vit_h"
+        sam = sam_model_registry[model_type](
+            checkpoint=args.sam_model_path) \
+            .to(device="cuda")
+        predictor = SamPredictor(sam)
+
+        for idx in (pbar := tqdm(range(len(df_bbox)), desc="Preprocesing images")):
+            row = df_bbox.iloc[idx].to_dict()
+            input_box = np.array([row["x"], row["y"], row["x"] + row["width"], row["y"] + row["height"]])
+
+            image = Image.open(row['file'])
+            image = np.array(image.convert('RGB'))
+            plt.imshow(image)
+            predictor.set_image(image)
+
+            masks, scores, logits = predictor.predict(
+                point_coords=None,
+                point_labels=None,
+                box=input_box[None, :],
+                multimask_output=False,  # we only want the segmentation with the highest score
+            )
+            mask = masks[0]
+
+            image_mask = image.copy()
+            image_mask[~mask, :] = 0
+            image_mask = image_mask[int(row["y"]):int(row["y"]) + int(row["height"]),
+                         int(row["x"]):int(row["x"]) + int(row["width"]), :]
+            image_mask_pil = Image.fromarray(image_mask)
+
+            filename = os.path.basename(row["file"])
+            args.input_data = os.path.splitext(args.input_data)[0] if not os.path.isdir(args.input_data) else args.input_data
+            filepath_no_bg = f'{args.input_data}/no_bg/{filename}'
+
+            if not os.path.exists(os.path.dirname(filepath_no_bg)):
+                os.makedirs(os.path.dirname(filepath_no_bg))
+            image_mask_pil.save(filepath_no_bg)
+
+        # update `input_data`  with preprocess images
+        args.input_data = f'{args.input_data}/no_bg/'
+        print(f"{color.BOLD}End preprocessing (total time: {round(time.time()-start_time_preprocessing, 2)}s){color.END}")
 
     # dataset initialization
     transform = transforms_dinov2(image_size=args.image_size) if args.model_architecture in ["dinov2", "resnet"] \
@@ -93,8 +194,7 @@ def main(args=None):
         folder_path_images=args.input_data,
         loader='pil',
         transform=transform,
-        augmentation=augments_dinov2(image_size=args.image_size),
-        probabilities=[1, 0, 0],
+        probabilities=[0, 0, 1],
         mode='single',
         device=DEVICE
     )
@@ -160,7 +260,7 @@ def main(args=None):
                                                    "neighbor_5"])
     output_results_prediction = pd.DataFrame(
         {
-            "filepath": dataset.dataframe.filepath.tolist(),
+            "filepath": dataset.dataframe.filepath.apply(lambda x: (Path(os.getcwd()) / x).resolve()).tolist(),
             "individual_predicted": predicted_lynx_ids,
             "is_new": is_new,
             "latest_picture_individual_predicted": clustering_model.most_recent_date_lynx_id(candidates_predicted_new_individual),
@@ -172,7 +272,8 @@ def main(args=None):
     # Save embeddings of our new images
     save_file({"embeddings": embeddings}, args.output_embeddings_path)
 
-    print('End of inference.')
+    print(f"{color.BOLD}{'#'*20} End of inference (total time: {round(time.time()-start_time_global, 2)}s). {'#'*20}\n"
+          f"Results written here: {args.output_informations_path} & {args.output_embeddings_path}{color.END}")
 
 
 if __name__ == '__main__':

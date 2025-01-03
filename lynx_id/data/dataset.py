@@ -98,7 +98,8 @@ class LynxDataset(Dataset):
     
     def convert_folder_images_to_csv(self):
         filepaths = [os.path.join(self.folder_path_images, filename)
-                     for filename in os.listdir(self.folder_path_images)]
+                     for filename in os.listdir(self.folder_path_images)
+                     if os.path.isfile(os.path.join(self.folder_path_images, filename))]
         return pd.DataFrame({'filepath': filepaths})
 
     def save_triplet_precompute(self):
